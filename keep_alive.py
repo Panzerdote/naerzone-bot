@@ -8,6 +8,10 @@ import requests
 import secrets
 from requests_oauthlib import OAuth2Session
 
+# === SOLUCIÓN PARA OAUTH2 EN RENDER ===
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permite HTTP internamente
+# ======================================
+
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -90,16 +94,12 @@ def dashboard():
         return redirect(url_for('home'))
     
     try:
-        # Obtener token
         token = session['oauth_token']
         discord = OAuth2Session(DISCORD_CLIENT_ID, token=token)
         
-        # Obtener servidores donde está el usuario
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        # Obtener servidores donde está el bot (esto requiere otra llamada)
-        # Por ahora, filtramos solo los que tienen permisos de administrador
         admin_guilds = [g for g in user_guilds if (int(g['permissions']) & 0x8) == 0x8]
         
         return render_template('dashboard.html', 
