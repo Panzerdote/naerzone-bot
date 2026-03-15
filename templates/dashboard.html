@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurar servidor - Naerzone Bot</title>
+    <title>Dashboard - Naerzone Bot</title>
     <style>
         * {
             margin: 0;
@@ -16,277 +16,282 @@
             background: linear-gradient(135deg, #1a1b2f 0%, #2a2b4a 100%);
             color: white;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
         }
 
         .container {
-            max-width: 600px;
-            width: 100%;
-            padding: 40px;
-            background: rgba(44, 47, 51, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: rgba(44, 47, 51, 0.7);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .logo span {
+            color: #5865F2;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .btn-logout {
+            background: #ed4245;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #c03538;
         }
 
         h1 {
-            margin-bottom: 10px;
+            margin-bottom: 30px;
         }
 
         h1 span {
             color: #5865F2;
         }
 
-        .server-name {
-            color: #5865F2;
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-            padding: 10px;
-            background: rgba(88, 101, 242, 0.1);
-            border-radius: 8px;
-            text-align: center;
+        .guilds-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
 
-        .warning {
-            background: rgba(250, 168, 26, 0.1);
-            border-left: 4px solid #faa81a;
-            padding: 15px;
-            margin-bottom: 30px;
-            border-radius: 5px;
+        .guild-card {
+            background: rgba(44, 47, 51, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            transition: transform 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .warning p {
-            color: #faa81a;
-            font-size: 0.9rem;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #b9bbbe;
-            font-size: 0.9rem;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #40444b;
-            border-radius: 8px;
-            background: #2c2f33;
-            color: white;
-            font-size: 1rem;
-        }
-
-        input:focus {
-            outline: none;
+        .guild-card:hover {
+            transform: translateY(-5px);
             border-color: #5865F2;
         }
 
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #5865F2;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
+        .guild-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 15px;
         }
 
-        button:hover {
-            background: #4752c4;
+        .guild-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #5865F2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
         }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .guild-icon img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
         }
 
-        .btn-secondary {
+        .guild-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .guild-status {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #b9bbbe;
+        }
+
+        .btn-config {
             display: inline-block;
-            padding: 12px 24px;
-            background: transparent;
-            border: 1px solid #5865F2;
-            color: #5865F2;
+            width: 100%;
+            padding: 12px;
+            background: #5865F2;
+            color: white;
             text-decoration: none;
             border-radius: 8px;
             text-align: center;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: background 0.3s;
+            border: none;
+            cursor: pointer;
         }
 
-        .btn-secondary:hover {
-            background: rgba(88, 101, 242, 0.1);
+        .btn-config:hover {
+            background: #4752c4;
         }
 
-        .error-message {
-            color: #ed4245;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .success-message {
-            color: #3ba55c;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            display: none;
+        .empty-state {
             text-align: center;
-            padding: 10px;
-            background: rgba(59, 165, 92, 0.1);
+            padding: 60px;
+            background: rgba(44, 47, 51, 0.7);
+            border-radius: 15px;
+            color: #b9bbbe;
+        }
+
+        .empty-state h3 {
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #5865F2;
+            color: white;
+            text-decoration: none;
             border-radius: 8px;
-        }
-
-        .loader {
-            display: none;
-            border: 3px solid #2c2f33;
-            border-top: 3px solid #5865F2;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            margin: 10px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
             margin-top: 20px;
+            font-weight: 600;
+            transition: background 0.3s;
         }
 
-        .button-group .btn-secondary {
-            flex: 1;
+        .btn-primary:hover {
+            background: #4752c4;
+        }
+
+        .invite-link {
+            margin-top: 30px;
+            text-align: center;
+            padding: 20px;
+            background: rgba(88, 101, 242, 0.1);
+            border-radius: 10px;
+        }
+
+        .invite-link a {
+            color: #5865F2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .invite-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .guilds-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 <span>Naerzone</span> Bot</h1>
-        <div class="server-name">
-            ⚙️ Configurando: {{ guild_name }}
-        </div>
-
-        <div class="warning">
-            <p>⚠️ <strong>IMPORTANTE SOBRE TUS CREDENCIALES</strong></p>
-            <small style="color: #b9bbbe;">
-                • Puedes crear una cuenta NUEVA en Naerzone solo para el bot<br>
-                • Si usas tu cuenta personal, es bajo tu propia responsabilidad<br>
-                • Las credenciales se guardan encriptadas<br>
-                • Nunca compartiremos tus datos
-            </small>
-        </div>
-
-        <form id="configForm">
-            <input type="hidden" id="guild_id" value="{{ guild_id }}">
-            
-            <div class="form-group">
-                <label>Usuario de Naerzone</label>
-                <input type="text" id="usuario" required placeholder="Ej: mi_usuario">
+        <header>
+            <div class="logo">🎮 Naerzone<span>Bot</span></div>
+            <div class="user-info">
+                {% if user %}
+                    <img src="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png" 
+                         class="user-avatar" alt="Avatar">
+                    <span>{{ user.username }}</span>
+                    <a href="/logout" class="btn-logout">Cerrar sesión</a>
+                {% endif %}
             </div>
+        </header>
 
-            <div class="form-group">
-                <label>Contraseña de Naerzone</label>
-                <input type="password" id="password" required placeholder="••••••••">
+        <h1>📋 <span>Mis servidores</span></h1>
+        <p style="color: #b9bbbe; margin-bottom: 30px;">
+            Selecciona un servidor para configurar las credenciales de Naerzone
+        </p>
+
+        {% if guilds %}
+            <div class="guilds-grid">
+                {% for guild in guilds %}
+                    <div class="guild-card">
+                        <div class="guild-header">
+                            {% if guild.icon %}
+                                <img src="https://cdn.discordapp.com/icons/{{ guild.id }}/{{ guild.icon }}.png" 
+                                     class="guild-icon" alt="Icono">
+                            {% else %}
+                                <div class="guild-icon">
+                                    {{ guild.name[0] }}
+                                </div>
+                            {% endif %}
+                            <div class="guild-name">{{ guild.name }}</div>
+                        </div>
+                        
+                        <div class="guild-status">
+                            ✅ Tienes permisos de administrador
+                        </div>
+                        
+                        <!-- IMPORTANTE: El guild.id se pasa correctamente -->
+                        <a href="/guild/{{ guild.id }}?name={{ guild.name | urlencode }}" 
+                           class="btn-config">
+                            ⚙️ Configurar credenciales
+                        </a>
+                    </div>
+                {% endfor %}
             </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No tienes servidores con el bot</h3>
+                <p>Para configurar un servidor, primero debes:</p>
+                <p style="margin: 20px 0; color: white;">
+                    1️⃣ Invitar el bot a tu servidor<br>
+                    2️⃣ Tener permisos de administrador
+                </p>
+                <a href="/" class="btn-primary">➕ Invitar bot</a>
+            </div>
+        {% endif %}
 
-            <div class="error-message" id="errorMsg"></div>
-            <div class="success-message" id="successMsg"></div>
-            <div class="loader" id="loader"></div>
-
-            <button type="submit" id="submitBtn">Guardar credenciales</button>
-        </form>
-
-        <div class="button-group">
-            <a href="/dashboard" class="btn-secondary">← Volver al dashboard</a>
+        <div class="invite-link">
+            <p>¿Necesitas invitar el bot a otro servidor?</p>
+            <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot" 
+               target="_blank">
+                🔗 Hacer clic aquí para invitar
+            </a>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('configForm');
-        const usuario = document.getElementById('usuario');
-        const password = document.getElementById('password');
-        const guildId = document.getElementById('guild_id');
-        const submitBtn = document.getElementById('submitBtn');
-        const errorMsg = document.getElementById('errorMsg');
-        const successMsg = document.getElementById('successMsg');
-        const loader = document.getElementById('loader');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            // Resetear mensajes
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
-            errorMsg.textContent = '';
-            successMsg.textContent = '';
-
-            // Deshabilitar botón y mostrar loader
-            submitBtn.disabled = true;
-            loader.style.display = 'block';
-
-            try {
-                // 1. Verificar credenciales con Naerzone
-                const verifyResponse = await fetch('/api/verificar-credenciales', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: usuario.value,
-                        password: password.value
-                    })
-                });
-
-                const verifyData = await verifyResponse.json();
-
-                if (!verifyData.valido) {
-                    throw new Error('Credenciales inválidas. Verifica tu usuario y contraseña.');
-                }
-
-                // 2. Guardar en base de datos
-                const saveResponse = await fetch('/api/guardar-credenciales', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        guild_id: guildId.value,
-                        guild_name: '{{ guild_name }}',
-                        usuario: usuario.value,
-                        password: password.value
-                    })
-                });
-
-                const saveData = await saveResponse.json();
-
-                if (!saveData.exito) {
-                    throw new Error(saveData.error || 'Error guardando credenciales');
-                }
-
-                // Éxito
-                successMsg.textContent = '✅ Credenciales guardadas correctamente. Puedes cerrar esta ventana.';
-                successMsg.style.display = 'block';
-
-                // Limpiar campos
-                usuario.value = '';
-                password.value = '';
-
-            } catch (error) {
-                errorMsg.textContent = error.message;
-                errorMsg.style.display = 'block';
-            } finally {
-                submitBtn.disabled = false;
-                loader.style.display = 'none';
-            }
+        // Pequeño script para debugging (opcional)
+        document.querySelectorAll('.btn-config').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                console.log('🔗 Navegando a:', href);
+            });
         });
     </script>
 </body>
