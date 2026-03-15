@@ -9,12 +9,16 @@ import secrets
 from requests_oauthlib import OAuth2Session
 from datetime import datetime
 import pytz
+import asyncio
 
+# === SOLUCIÓN PARA OAUTH2 EN RENDER ===
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# ======================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configuración de Discord OAuth
 DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
 DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET', '')
 RENDER_URL = os.environ.get('RENDER_EXTERNAL_URL', 'https://naerzone-bot.onrender.com')
@@ -25,12 +29,39 @@ DISCORD_AUTH_URL = DISCORD_API_BASE + '/oauth2/authorize'
 DISCORD_USER_URL = DISCORD_API_BASE + '/users/@me'
 DISCORD_GUILDS_URL = DISCORD_API_BASE + '/users/@me/guilds'
 
+# Importar Database después de configurar logging
+from database import Database
+
 app = Flask(__name__, 
             template_folder='templates',
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
 logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
+
+# ==================== FUNCIÓN AUXILIAR PARA OBTENER DATOS ====================
+def obtener_datos_servidor(guild_id):
+    """Obtiene credenciales y configuración de un servidor de forma síncrona"""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        db = Database()
+        
+        # Obtener credenciales y configuración
+        credenciales = loop.run_until_complete(db.obtener_credenciales(guild_id))
+        config = loop.run_until_complete(db.obtener_config(guild_id))
+        
+        loop.close()
+        
+        logger.info(f"📊 Datos obtenidos para {guild_id}:")
+        logger.info(f"   - Credenciales: {'✅' if credenciales else '❌'}")
+        logger.info(f"   - Configuración: {'✅' if config else '❌'}")
+        
+        return credenciales, config
+    except Exception as e:
+        logger.error(f"Error obteniendo datos: {e}")
+        return None, None
 
 # ==================== HEALTH CHECKS ====================
 @app.route('/health')
@@ -94,20 +125,13 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        # Obtener lista de servidores donde está el bot (esto requeriría otra API)
-        # Por ahora, simulamos algunos para el ejemplo
-        # En un caso real, necesitarías el token del bot para consultar sus guilds
-        
         admin_guilds = []
-        from database import Database
         db = Database()
-        import asyncio
         
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
-                # Verificar si el bot está en este servidor
-                # Esto es una simulación - en realidad necesitarías el bot para saberlo
+                # Verificar si el bot está en este servidor (tiene configuración)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
@@ -132,31 +156,44 @@ def dashboard():
 # ==================== CONFIGURACIÓN DE SERVIDOR ====================
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
-    logger.info(f"⚙️ Configurando servidor ID: {guild_id}")
+    """Página de configuración para un servidor específico"""
+    logger.info(f"⚙️ Accediendo a configuración para guild_id: {guild_id}")
     
     if 'oauth_token' not in session:
+        logger.warning("⚠️ Usuario no autenticado, redirigiendo")
         return redirect(url_for('home'))
     
-    if not guild_id:
+    if not guild_id or guild_id == '':
+        logger.error("❌ guild_id vacío")
         return "Error: ID de servidor no válido", 400
     
     guild_name = request.args.get('name', 'Servidor')
     
-    # Obtener configuración actual si existe
-    from database import Database
-    db = Database()
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    config = loop.run_until_complete(db.obtener_config(guild_id))
-    credenciales = loop.run_until_complete(db.obtener_credenciales(guild_id))
-    loop.close()
+    # Obtener credenciales y configuración de Supabase
+    credenciales, config = obtener_datos_servidor(guild_id)
+    
+    logger.info(f"📌 Renderizando template para {guild_name} ({guild_id})")
     
     return render_template('guild_config.html', 
                          guild_id=guild_id,
                          guild_name=guild_name,
-                         config=config,
-                         credenciales=credenciales)
+                         credenciales=credenciales,
+                         config=config)
+
+# ==================== FILTROS PARA JINJA2 ====================
+@app.template_filter('strftime')
+def jinja_strftime(date, format):
+    """Filtro para formatear fechas en templates"""
+    return date.strftime(format)
+
+# ==================== CONTEXTO PARA TEMPLATES ====================
+@app.context_processor
+def utility_processor():
+    """Añade funciones útiles a todos los templates"""
+    def now():
+        """Devuelve la fecha/hora actual"""
+        return datetime.now(pytz.timezone('America/Santiago'))
+    return dict(now=now)
 
 # ==================== API ====================
 @app.route('/api/user/guilds')
@@ -178,6 +215,7 @@ def home():
         user = session.get('user')
         return render_template('index.html', user=user)
     except Exception as e:
+        logger.error(f"Error en home: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/login/<guild_id>')
@@ -189,6 +227,7 @@ def login_page(guild_id):
 
 def run():
     port = int(os.environ.get("PORT", 10000))
+    logger.info(f"🌐 Servidor web escuchando en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
 
 def keep_alive():
@@ -198,5 +237,5 @@ def keep_alive():
         logger.info("✅ Servidor web iniciado")
         return thread
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error iniciando servidor: {e}")
         return None
