@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar servidor - Naerzone Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1b2f 0%, #2a2b4a 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            background: rgba(44, 47, 51, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 2rem;
+        }
+
+        h1 span {
+            color: #5865F2;
+            background: linear-gradient(45deg, #5865F2, #8a9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .server-name {
+            color: #5865F2;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(88, 101, 242, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(88, 101, 242, 0.3);
+            word-break: break-word;
+        }
+
+        .server-id {
+            font-size: 0.8rem;
+            color: #b9bbbe;
+            margin-top: 5px;
+        }
+
+        .warning {
+            background: rgba(250, 168, 26, 0.1);
+            border-left: 4px solid #faa81a;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .warning p {
+            color: #faa81a;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .warning small {
+            color: #b9bbbe;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b9bbbe;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            background: #2c2f33;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #5865F2;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            margin-bottom: 15px;
+        }
+
+        button:hover:not(:disabled) {
+            background: #4752c4;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid #5865F2;
+            color: #5865F2;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        .error-message {
+            color: #ed4245;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+            padding: 10px;
+            background: rgba(237, 66, 69, 0.1);
+            border-radius: 8px;
+        }
+
+        .success-message {
+            color: #3ba55c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background: rgba(59, 165, 92, 0.1);
+            border-radius: 8px;
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid #2c2f33;
+            border-top: 3px solid #5865F2;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .info-box {
+            background: rgba(88, 101, 242, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #b9bbbe;
+            border: 1px solid rgba(88, 101, 242, 0.2);
+        }
+
+        .info-box p {
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            padding-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        .debug-info {
+            font-size: 0.8rem;
+            color: #b9bbbe;
+            margin-top: 10px;
+            padding: 5px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 <span>Naerzone</span> Bot</h1>
+        
+        <div class="server-name">
+            ⚙️ Configurando: <strong>{{ guild_name }}</strong>
+            <div class="server-id">ID: {{ guild_id }}</div>
+        </div>
+
+        <div class="warning">
+            <p>⚠️ <strong>IMPORTANTE SOBRE TUS CREDENCIALES</strong></p>
+            <small>
+                • Puedes crear una cuenta NUEVA en Naerzone solo para el bot<br>
+                • Si usas tu cuenta personal, es bajo tu propia responsabilidad<br>
+                • Las credenciales se guardan encriptadas<br>
+                • Nunca compartiremos tus datos con nadie
+            </small>
+        </div>
+
+        <form id="configForm">
+            <input type="hidden" id="guild_id" value="{{ guild_id }}">
+            <input type="hidden" id="guild_name" value="{{ guild_name }}">
+            
+            <div class="form-group">
+                <label for="usuario">Usuario de Naerzone</label>
+                <input type="text" id="usuario" name="usuario" required 
+                       placeholder="Ej: mi_usuario"
+                       autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña de Naerzone</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="••••••••"
+                       autocomplete="off">
+            </div>
+
+            <div class="error-message" id="errorMsg"></div>
+            <div class="success-message" id="successMsg"></div>
+            <div class="loader" id="loader"></div>
+
+            <button type="submit" id="submitBtn">
+                Guardar credenciales
+            </button>
+        </form>
+
+        <div class="button-group">
+            <a href="/dashboard" class="btn-secondary">← Volver al dashboard</a>
+        </div>
+
+        <div class="info-box">
+            <p><strong>📌 ¿Por qué necesito mis credenciales?</strong></p>
+            <ul>
+                <li>El bot necesita iniciar sesión en Naerzone para ver la oferta</li>
+                <li>Cada servidor usa sus propias credenciales (no compartidas)</li>
+                <li>Así evitamos límites de IP o bloqueos</li>
+                <li>Puedes crear una cuenta nueva específica para el bot</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <p><strong>🔒 Privacidad</strong></p>
+            <ul>
+                <li>Tus credenciales se guardan encriptadas en Supabase</li>
+                <li>Solo se usan para obtener la oferta diaria</li>
+                <li>Puedes cambiar o eliminar tus datos cuando quieras</li>
+            </ul>
+        </div>
+
+        <div class="debug-info" id="debugInfo">
+            <!-- Información de depuración visible solo si hay error -->
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('configForm');
+        const usuario = document.getElementById('usuario');
+        const password = document.getElementById('password');
+        const guildId = document.getElementById('guild_id');
+        const guildName = document.getElementById('guild_name');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const loader = document.getElementById('loader');
+        const debugInfo = document.getElementById('debugInfo');
+
+        // Mostrar información de depuración
+        console.log('🔍 Debug - Valores iniciales:');
+        console.log('   guild_id:', guildId.value);
+        console.log('   guild_name:', guildName.value);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validar que guild_id no esté vacío
+            if (!guildId.value || guildId.value === '') {
+                errorMsg.textContent = '❌ Error: ID del servidor vacío. Por favor, vuelve al dashboard y selecciona el servidor nuevamente.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Resetear mensajes
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+
+            // Deshabilitar botón y mostrar loader
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+
+            console.log('📤 Enviando formulario:');
+            console.log('   guild_id:', guildId.value);
+            console.log('   guild_name:', guildName.value);
+            console.log('   usuario:', usuario.value);
+
+            try {
+                // 1. Verificar credenciales con Naerzone
+                console.log('🔍 Verificando credenciales...');
+                const verifyResponse = await fetch('/api/verificar-credenciales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuario.value,
+                        password: password.value
+                    })
+                });
+
+                const verifyData = await verifyResponse.json();
+                console.log('📊 Respuesta verificación:', verifyData);
+
+                if (!verifyData.valido) {
+                    throw new Error('Credenciales inválidas. Verifica tu usuario y contraseña.');
+                }
+
+                // 2. Guardar en base de datos
+                console.log('💾 Guardando credenciales...');
+                const saveResponse = await fetch('/api/guardar-credenciales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        guild_id: guildId.value,
+                        guild_name: guildName.value,
+                        usuario: usuario.value,
+                        password: password.value
+                    })
+                });
+
+                const saveData = await saveResponse.json();
+                console.log('📊 Respuesta guardado:', saveData);
+
+                if (!saveData.exito) {
+                    throw new Error(saveData.error || 'Error guardando credenciales');
+                }
+
+                // Éxito
+                successMsg.textContent = '✅ Credenciales guardadas correctamente. Puedes cerrar esta ventana y usar el bot en Discord.';
+                successMsg.style.display = 'block';
+
+                // Limpiar campos sensibles
+                usuario.value = '';
+                password.value = '';
+
+                // Opcional: redirigir después de 3 segundos
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 3000);
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                errorMsg.textContent = error.message;
+                errorMsg.style.display = 'block';
+                
+                // Mostrar información de depuración
+                debugInfo.style.display = 'block';
+                debugInfo.innerHTML = `
+                    <strong>Información de depuración:</strong><br>
+                    Guild ID: ${guildId.value}<br>
+                    Guild Name: ${guildName.value}<br>
+                    Error: ${error.message}
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+
+        // Validar que el campo guild_id no esté vacío al cargar
+        window.addEventListener('load', function() {
+            if (!guildId.value || guildId.value === '') {
+                errorMsg.textContent = '⚠️ Advertencia: No se detectó el ID del servidor. Por favor, vuelve al dashboard y selecciona el servidor nuevamente.';
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
