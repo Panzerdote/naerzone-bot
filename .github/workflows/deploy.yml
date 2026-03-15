@@ -18,22 +18,36 @@ jobs:
       - name: Setup Fly.io CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
 
+      - name: Check if app exists
+        id: check_app
+        run: |
+          if flyctl apps list --json | jq -e '.[] | select(.Name == "naerzone-bot")' > /dev/null; then
+            echo "App exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "App does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Create app on Fly.io
+        if: steps.check_app.outputs.exists == 'false'
+        run: |
+          flyctl apps create naerzone-bot --machines
+          flyctl regions set cl
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
       - name: Deploy to Fly.io
         run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
-      - name: Set Discord token
-        run: flyctl secrets set DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}" --app naerzone-bot
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Set Supabase URL
-        run: flyctl secrets set SUPABASE_URL="${{ secrets.SUPABASE_URL }}" --app naerzone-bot
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-      - name: Set Supabase Key
-        run: flyctl secrets set SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" --app naerzone-bot
+      - name: Set secrets
+        run: |
+          flyctl secrets set DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}"
+          flyctl secrets set SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          flyctl secrets set SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}"
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
