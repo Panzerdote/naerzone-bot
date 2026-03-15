@@ -4,6 +4,8 @@ import logging
 from database import Database
 import requests
 import asyncio
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
 db = Database()
@@ -31,7 +33,6 @@ def init_api_routes(app):
         data = request.json
         usuario = data.get('usuario')
         password = data.get('password')
-        
         if verificar_credenciales_naerzone(usuario, password):
             return jsonify({'valido': True})
         return jsonify({'valido': False, 'error': 'Credenciales inválidas'})
@@ -56,7 +57,6 @@ def init_api_routes(app):
             db.guardar_credenciales(guild_id, guild_name, usuario, password)
         )
         loop.close()
-        
         return jsonify({'exito': resultado})
     
     @app.route('/api/guardar-config', methods=['POST'])
@@ -64,14 +64,38 @@ def init_api_routes(app):
         data = request.json
         guild_id = data.get('guild_id')
         canal_id = data.get('canal_id')
+        canal_nombre = data.get('canal_nombre', '')
         hora = data.get('hora', 22)
         minuto = data.get('minuto', 0)
+        mensaje = data.get('mensaje_personalizado')
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resultado = loop.run_until_complete(
-            db.guardar_config(guild_id, canal_id, hora, minuto)
+            db.guardar_config(guild_id, canal_id, canal_nombre, hora, minuto, mensaje)
         )
         loop.close()
-        
         return jsonify({'exito': resultado})
+    
+    @app.route('/api/obtener-config', methods=['GET'])
+    def api_obtener_config():
+        guild_id = request.args.get('guild_id')
+        if not guild_id:
+            return jsonify({'error': 'Falta guild_id'}), 400
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        config = loop.run_until_complete(db.obtener_config(guild_id))
+        credenciales = loop.run_until_complete(db.obtener_credenciales(guild_id))
+        loop.close()
+        
+        return jsonify({
+            'config': config,
+            'credenciales': credenciales
+        })
+    
+    @app.route('/api/canales/<guild_id>', methods=['GET'])
+    def api_canales(guild_id):
+        """Obtiene los canales de un servidor (requiere token de bot)"""
+        # Esto requeriría el token del bot, no implementado aquí
+        return jsonify({'canales': []})
