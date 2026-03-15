@@ -1,22 +1,293 @@
-FROM python:3.12-slim
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar servidor - Naerzone Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-WORKDIR /app
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1b2f 0%, #2a2b4a 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            background: rgba(44, 47, 51, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
 
-# Copiar requirements
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+        h1 {
+            margin-bottom: 10px;
+        }
 
-# Copiar código
-COPY . .
+        h1 span {
+            color: #5865F2;
+        }
 
-# Puerto que usa Fly.io
-EXPOSE 8080
+        .server-name {
+            color: #5865F2;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            padding: 10px;
+            background: rgba(88, 101, 242, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
 
-# Comando para ejecutar
-CMD ["python", "app/main.py"]
+        .warning {
+            background: rgba(250, 168, 26, 0.1);
+            border-left: 4px solid #faa81a;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .warning p {
+            color: #faa81a;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b9bbbe;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #40444b;
+            border-radius: 8px;
+            background: #2c2f33;
+            color: white;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #5865F2;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            background: #4752c4;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            display: inline-block;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid #5865F2;
+            color: #5865F2;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        .error-message {
+            color: #ed4245;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message {
+            color: #3ba55c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background: rgba(59, 165, 92, 0.1);
+            border-radius: 8px;
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid #2c2f33;
+            border-top: 3px solid #5865F2;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .button-group .btn-secondary {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 <span>Naerzone</span> Bot</h1>
+        <div class="server-name">
+            ⚙️ Configurando: {{ guild_name }}
+        </div>
+
+        <div class="warning">
+            <p>⚠️ <strong>IMPORTANTE SOBRE TUS CREDENCIALES</strong></p>
+            <small style="color: #b9bbbe;">
+                • Puedes crear una cuenta NUEVA en Naerzone solo para el bot<br>
+                • Si usas tu cuenta personal, es bajo tu propia responsabilidad<br>
+                • Las credenciales se guardan encriptadas<br>
+                • Nunca compartiremos tus datos
+            </small>
+        </div>
+
+        <form id="configForm">
+            <input type="hidden" id="guild_id" value="{{ guild_id }}">
+            
+            <div class="form-group">
+                <label>Usuario de Naerzone</label>
+                <input type="text" id="usuario" required placeholder="Ej: mi_usuario">
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña de Naerzone</label>
+                <input type="password" id="password" required placeholder="••••••••">
+            </div>
+
+            <div class="error-message" id="errorMsg"></div>
+            <div class="success-message" id="successMsg"></div>
+            <div class="loader" id="loader"></div>
+
+            <button type="submit" id="submitBtn">Guardar credenciales</button>
+        </form>
+
+        <div class="button-group">
+            <a href="/dashboard" class="btn-secondary">← Volver al dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('configForm');
+        const usuario = document.getElementById('usuario');
+        const password = document.getElementById('password');
+        const guildId = document.getElementById('guild_id');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const loader = document.getElementById('loader');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Resetear mensajes
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+
+            // Deshabilitar botón y mostrar loader
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+
+            try {
+                // 1. Verificar credenciales con Naerzone
+                const verifyResponse = await fetch('/api/verificar-credenciales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuario.value,
+                        password: password.value
+                    })
+                });
+
+                const verifyData = await verifyResponse.json();
+
+                if (!verifyData.valido) {
+                    throw new Error('Credenciales inválidas. Verifica tu usuario y contraseña.');
+                }
+
+                // 2. Guardar en base de datos
+                const saveResponse = await fetch('/api/guardar-credenciales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        guild_id: guildId.value,
+                        guild_name: '{{ guild_name }}',
+                        usuario: usuario.value,
+                        password: password.value
+                    })
+                });
+
+                const saveData = await saveResponse.json();
+
+                if (!saveData.exito) {
+                    throw new Error(saveData.error || 'Error guardando credenciales');
+                }
+
+                // Éxito
+                successMsg.textContent = '✅ Credenciales guardadas correctamente. Puedes cerrar esta ventana.';
+                successMsg.style.display = 'block';
+
+                // Limpiar campos
+                usuario.value = '';
+                password.value = '';
+
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
