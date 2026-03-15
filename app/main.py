@@ -508,4 +508,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     bot = NaerzoneBot()
+        # Iniciar servidor web ANTES del bot
+    keep_alive()
+    # Iniciar bot
     bot.run(token)
