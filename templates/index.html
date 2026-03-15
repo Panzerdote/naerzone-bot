@@ -28,6 +28,10 @@
         header {
             background: rgba(0,0,0,0.2);
             padding: 20px 0;
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(10px);
+            z-index: 100;
         }
 
         nav {
@@ -45,6 +49,23 @@
             color: #5865F2;
         }
 
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #5865F2;
+        }
+
         .btn {
             background: #5865F2;
             color: white;
@@ -53,10 +74,34 @@
             text-decoration: none;
             font-weight: 600;
             transition: background 0.3s;
+            display: inline-block;
         }
 
         .btn:hover {
             background: #4752c4;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .btn-large {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
         }
 
         /* Hero */
@@ -72,6 +117,9 @@
 
         .hero h1 span {
             color: #5865F2;
+            background: linear-gradient(45deg, #5865F2, #8a9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .hero p {
@@ -79,6 +127,36 @@
             color: #b9bbbe;
             max-width: 600px;
             margin: 0 auto 30px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #5865F2;
+        }
+
+        .stat-label {
+            color: #b9bbbe;
+            font-size: 0.9rem;
         }
 
         /* Features */
@@ -89,11 +167,21 @@
         .features h2 {
             text-align: center;
             font-size: 2.5rem;
-            margin-bottom: 50px;
+            margin-bottom: 20px;
         }
 
         .features h2 span {
             color: #5865F2;
+            background: linear-gradient(45deg, #5865F2, #8a9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: #b9bbbe;
+            font-size: 1.2rem;
+            margin-bottom: 50px;
         }
 
         .feature-grid {
@@ -104,9 +192,15 @@
 
         .feature-card {
             background: rgba(44, 47, 51, 0.7);
+            backdrop-filter: blur(10px);
             padding: 30px;
             border-radius: 15px;
             text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
         }
 
         .feature-icon {
@@ -126,6 +220,19 @@
         .how-it-works {
             background: rgba(0,0,0,0.2);
             padding: 60px 0;
+        }
+
+        .how-it-works h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .how-it-works h2 span {
+            color: #5865F2;
+            background: linear-gradient(45deg, #5865F2, #8a9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .steps {
@@ -152,6 +259,76 @@
             margin: 0 auto 20px;
         }
 
+        .step h3 {
+            margin-bottom: 10px;
+        }
+
+        .step p {
+            color: #b9bbbe;
+        }
+
+        /* Commands */
+        .commands {
+            padding: 60px 0;
+        }
+
+        .commands h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .commands h2 span {
+            color: #5865F2;
+            background: linear-gradient(45deg, #5865F2, #8a9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .command-category {
+            background: rgba(44, 47, 51, 0.7);
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .command-category h3 {
+            color: #5865F2;
+            margin-bottom: 20px;
+        }
+
+        .command-category table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .command-category td {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .command-category tr:last-child td {
+            border-bottom: none;
+        }
+
+        .command-category td:first-child {
+            color: #57F287;
+            font-weight: 600;
+            width: 40%;
+        }
+
+        .command-category code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
         /* CTA */
         .cta {
             padding: 80px 0;
@@ -164,29 +341,215 @@
             margin-bottom: 20px;
         }
 
+        .cta h2 span {
+            color: white;
+        }
+
         .cta p {
             font-size: 1.2rem;
             margin-bottom: 30px;
             opacity: 0.9;
         }
 
-        .btn-large {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            background: white;
-            color: #5865F2;
+        .button-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        .btn-large:hover {
+        .btn-primary {
+            background: white;
+            color: #5865F2;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
             background: #f0f0f0;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-outline:hover {
+            background: white;
+            color: #5865F2;
+            transform: translateY(-2px);
+        }
+
+        .small-note {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+
+        /* FAQ */
+        .faq {
+            padding: 60px 0;
+        }
+
+        .faq h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .faq h2 span {
+            color: #5865F2;
+            background: linear-gradient(45deg, #5865F2, #8a9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .faq-item {
+            background: rgba(44, 47, 51, 0.5);
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        .faq-item h3 {
+            color: #5865F2;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .faq-item p {
+            color: #b9bbbe;
+        }
+
+        .faq-item code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #57F287;
         }
 
         /* Footer */
         footer {
             background: rgba(0,0,0,0.3);
-            padding: 40px 0;
-            text-align: center;
+            padding: 60px 0 20px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1.5fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-logo p {
             color: #b9bbbe;
+            margin-top: 15px;
+        }
+
+        .footer-links h4 {
+            margin-bottom: 20px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: #b9bbbe;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #5865F2;
+        }
+
+        .footer-social p {
+            color: #b9bbbe;
+            margin: 15px 0;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #b9bbbe;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .footer-content {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            h1 {
+                font-size: 2rem !important;
+            }
+
+            h2 {
+                font-size: 2rem !important;
+            }
+
+            .stats {
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+        }
+
+        /* User info */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .btn-logout {
+            background: #ed4245;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .btn-logout:hover {
+            background: #c03538;
         }
     </style>
 </head>
@@ -195,66 +558,126 @@
         <div class="container">
             <nav>
                 <div class="logo">🎮 Naerzone<span>Bot</span></div>
-                <a href="#como-funciona" class="btn">¿Cómo funciona?</a>
+                <ul class="nav-links">
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#caracteristicas">Características</a></li>
+                    <li><a href="#comandos">Comandos</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                </ul>
+                <div class="user-info">
+                    {% if user %}
+                        <img src="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png" 
+                             class="user-avatar" alt="Avatar">
+                        <span>{{ user.username }}</span>
+                        <a href="/logout" class="btn btn-logout">Salir</a>
+                    {% else %}
+                        <a href="/login" class="btn">🔐 Dashboard</a>
+                    {% endif %}
+                </div>
+                <button class="menu-toggle">☰</button>
             </nav>
         </div>
     </header>
 
-    <section class="hero">
+    <section id="inicio" class="hero">
         <div class="container">
             <h1>🎁 Ofertas diarias de <span>Naerzone</span> en tu Discord</h1>
             <p>Bot automático y gratuito que publica la promoción del día. Cada servidor usa su propia cuenta de Naerzone.</p>
-            <a href="#invitar" class="btn btn-large">➕ Invitar Bot</a>
-        </div>
-    </section>
+            
+            <div class="hero-buttons">
+                <a href="/login" class="btn btn-large btn-primary">
+                    🔐 Dashboard (Administradores)
+                </a>
+                <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot" 
+                   class="btn btn-large btn-secondary" target="_blank">
+                    ➕ Invitar Bot
+                </a>
+            </div>
 
-    <section class="features">
-        <div class="container">
-            <h2>✨ <span>Características</span></h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3>100% Automático</h3>
-                    <p>Publica la oferta diaria sin intervención manual.</p>
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Gratis</span>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔐</div>
-                    <h3>Tus Credenciales</h3>
-                    <p>Cada servidor usa su propia cuenta de Naerzone.</p>
+                <div class="stat">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Automático</span>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⚙️</div>
-                    <h3>Configurable</h3>
-                    <p>Elige canal y hora de envío para tu servidor.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🆓</div>
-                    <h3>Completamente Gratis</h3>
-                    <p>Sin costos ocultos, sin límites.</p>
+                <div class="stat">
+                    <span class="stat-number">∞</span>
+                    <span class="stat-label">Servidores</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="como-funciona" class="how-it-works">
+    <section id="caracteristicas" class="features">
+        <div class="container">
+            <h2>✨ <span>Características</span></h2>
+            <p class="section-subtitle">Todo lo que necesitas para automatizar las ofertas de Naerzone</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>100% Automático</h3>
+                    <p>Publica la oferta diaria sin intervención manual. Solo configúralo una vez.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Tus Credenciales</h3>
+                    <p>Cada servidor usa su propia cuenta de Naerzone. Seguro y privado.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Configurable</h3>
+                    <p>Elige el canal, la hora de envío y la zona horaria que prefieras.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🆓</div>
+                    <h3>Completamente Gratis</h3>
+                    <p>Sin costos ocultos, sin límites de servidores. Funciona 24/7.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3>Iconos de WoWhead</h3>
+                    <p>Muestra el icono real del objeto en oferta automáticamente.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Menciones @everyone</h3>
+                    <p>El bot menciona a @everyone cuando publica la oferta.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
         <div class="container">
             <h2>🚀 <span>Así funciona</span></h2>
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <h3>Invita el bot</h3>
-                    <p>Agrega el bot a tu servidor de Discord</p>
+                    <p>Agrega el bot a tu servidor de Discord con un clic</p>
                 </div>
+                
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h3>Configura tus credenciales</h3>
-                    <p>Ingresa tu usuario y contraseña de Naerzone en la web</p>
+                    <h3>Inicia sesión</h3>
+                    <p>Ve al Dashboard e inicia sesión con Discord</p>
                 </div>
+                
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h3>Elige canal y hora</h3>
-                    <p>Usa los comandos del bot para personalizar</p>
+                    <h3>Configura credenciales</h3>
+                    <p>Ingresa tu usuario y contraseña de Naerzone</p>
                 </div>
+                
                 <div class="step">
                     <div class="step-number">4</div>
                     <h3>¡Disfruta!</h3>
@@ -264,22 +687,169 @@
         </div>
     </section>
 
-    <section id="invitar" class="cta">
+    <section id="comandos" class="commands">
         <div class="container">
-            <h2>🎯 ¿Listo para empezar?</h2>
-            <p>Invita el bot a tu servidor y configura tus credenciales en menos de 5 minutos.</p>
-            <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot" class="btn btn-large" target="_blank">
-                ➕ Invitar Bot a Discord
-            </a>
-            <p style="margin-top: 20px; font-size: 0.9rem;">Permisos: Enviar mensajes, Insertar enlaces, Leer historial</p>
+            <h2>📋 <span>Comandos</span> disponibles</h2>
+            <p class="section-subtitle">Todos los comandos usan el prefijo <code>n!</code></p>
+            
+            <div class="commands-grid">
+                <div class="command-category">
+                    <h3>⚙️ Configuración (Admin)</h3>
+                    <table>
+                        <tr>
+                            <td><code>n!config</code></td>
+                            <td>Ver configuración actual</td>
+                        </tr>
+                        <tr>
+                            <td><code>n!config canal #canal</code></td>
+                            <td>Elegir canal de ofertas</td>
+                        </tr>
+                        <tr>
+                            <td><code>n!config hora 22 0</code></td>
+                            <td>Cambiar hora de envío</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="command-category">
+                    <h3>🛒 Promociones</h3>
+                    <table>
+                        <tr>
+                            <td><code>n!promo</code></td>
+                            <td>Ver oferta del día</td>
+                        </tr>
+                        <tr>
+                            <td><code>n!proximo</code></td>
+                            <td>Saber próximo envío</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="command-category">
+                    <h3>ℹ️ Información</h3>
+                    <table>
+                        <tr>
+                            <td><code>n!comandos</code></td>
+                            <td>Mostrar esta ayuda</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="faq">
+        <div class="container">
+            <h2>❓ <span>Preguntas</span> frecuentes</h2>
+            
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h3>¿El bot es realmente gratis?</h3>
+                    <p>Sí, 100% gratis y lo será siempre. Sin planes de cobro.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>¿Cada cuánto se publica?</h3>
+                    <p>Una vez al día, a la hora que configures (por defecto 22:00 Chile).</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>¿Necesito dar mis credenciales?</h3>
+                    <p>Sí, el bot necesita iniciar sesión en Naerzone para ver la oferta. Puedes crear una cuenta nueva solo para el bot.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>¿Es seguro guardar mis credenciales?</h3>
+                    <p>Sí, se guardan encriptadas en Supabase. Solo se usan para obtener la oferta diaria.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>¿Qué pasa si el bot se cae?</h3>
+                    <p>Está hosteado en Render 24/7 con sistema anti-sleep. Si algo falla, se reinicia automáticamente.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>¿Puedo probarlo antes?</h3>
+                    <p>Puedes invitar el bot y configurarlo sin compromiso. Todo es gratuito.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>🎯 ¿Listo para <span>automatizar</span> las ofertas?</h2>
+            <p>Invita el bot y configura tus credenciales en menos de 5 minutos.</p>
+            
+            <div class="button-group">
+                <a href="/login" class="btn-primary btn-large">
+                    🔐 Ir al Dashboard
+                </a>
+                <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot" 
+                   class="btn-outline btn-large" target="_blank">
+                    ➕ Invitar Bot
+                </a>
+            </div>
+            
+            <p class="small-note">Permisos necesarios: Enviar mensajes, Insertar enlaces, Leer historial</p>
         </div>
     </section>
 
     <footer>
         <div class="container">
-            <p>© 2024 Naerzone Bot. No afiliado a Naerzone oficial.</p>
-            <p style="margin-top: 10px;">Cada usuario es responsable de sus propias credenciales.</p>
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <div class="logo">🎮 Naerzone<span>Bot</span></div>
+                    <p>Ofertas diarias automáticas para tu servidor de Discord.</p>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Enlaces</h4>
+                    <ul>
+                        <li><a href="#inicio">Inicio</a></li>
+                        <li><a href="#caracteristicas">Características</a></li>
+                        <li><a href="#comandos">Comandos</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacidad</a></li>
+                        <li><a href="#">Términos</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-social">
+                    <h4>Contacto</h4>
+                    <p>¿Problemas? <a href="mailto:soporte@naerzonebot.com">soporte@naerzonebot.com</a></p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2024 Naerzone Bot. No afiliado a Naerzone oficial.</p>
+                <p style="margin-top: 5px;">Cada usuario es responsable de sus propias credenciales.</p>
+            </div>
         </div>
     </footer>
+
+    <script>
+        // Menú móvil
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+
+        // Scroll suave
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if(target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
