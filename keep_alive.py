@@ -9,10 +9,9 @@ import secrets
 from requests_oauthlib import OAuth2Session
 
 # === SOLUCIÓN PARA OAUTH2 EN RENDER ===
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # Permite HTTP internamente
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 # ======================================
 
-# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -27,18 +26,14 @@ DISCORD_AUTH_URL = DISCORD_API_BASE + '/oauth2/authorize'
 DISCORD_USER_URL = DISCORD_API_BASE + '/users/@me'
 DISCORD_GUILDS_URL = DISCORD_API_BASE + '/users/@me/guilds'
 
-# Crear aplicación Flask
 app = Flask(__name__, 
             template_folder='templates',
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
-logger.info(f"🔧 Configuración OAuth2:")
-logger.info(f"   Client ID: {DISCORD_CLIENT_ID}")
-logger.info(f"   Redirect URI: {DISCORD_REDIRECT_URI}")
-logger.info(f"   Render URL: {RENDER_URL}")
+logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
 
-# ==================== RUTAS PARA HEALTH CHECKS ====================
+# ==================== HEALTH CHECKS ====================
 @app.route('/health')
 def health():
     return jsonify({"status": "healthy", "timestamp": time.time()}), 200
@@ -47,11 +42,9 @@ def health():
 def ping():
     return "pong", 200
 
-# ==================== RUTAS DE AUTENTICACIÓN ====================
+# ==================== AUTENTICACIÓN ====================
 @app.route('/login')
 def login():
-    """Inicia el flujo de login con Discord"""
-    logger.info("🔐 Iniciando login con Discord")
     discord = OAuth2Session(
         DISCORD_CLIENT_ID,
         redirect_uri=DISCORD_REDIRECT_URI,
@@ -59,13 +52,10 @@ def login():
     )
     authorization_url, state = discord.authorization_url(DISCORD_AUTH_URL)
     session['oauth_state'] = state
-    logger.info(f"📤 Redirigiendo a Discord: {authorization_url}")
     return redirect(authorization_url)
 
 @app.route('/callback')
 def callback():
-    """Callback después de autorizar en Discord"""
-    logger.info("📞 Recibiendo callback de Discord")
     try:
         discord = OAuth2Session(
             DISCORD_CLIENT_ID,
@@ -78,75 +68,55 @@ def callback():
             authorization_response=request.url
         )
         session['oauth_token'] = token
-        logger.info("✅ Token OAuth2 obtenido correctamente")
         
-        # Obtener información del usuario
         user_response = discord.get(DISCORD_USER_URL)
-        user_data = user_response.json()
-        session['user'] = user_data
-        logger.info(f"👤 Usuario autenticado: {user_data.get('username')}")
+        session['user'] = user_response.json()
         
         return redirect(url_for('dashboard'))
     except Exception as e:
-        logger.error(f"❌ Error en callback: {e}")
+        logger.error(f"Error en callback: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/logout')
 def logout():
-    """Cierra sesión"""
-    logger.info("👋 Cerrando sesión")
     session.clear()
     return redirect(url_for('home'))
 
-# ==================== RUTAS DEL DASHBOARD ====================
+# ==================== DASHBOARD ====================
 @app.route('/dashboard')
 def dashboard():
-    """Dashboard principal con lista de servidores"""
-    logger.info("📊 Accediendo al dashboard")
     if 'oauth_token' not in session:
-        logger.warning("⚠️ Usuario no autenticado, redirigiendo a home")
         return redirect(url_for('home'))
     
     try:
         token = session['oauth_token']
         discord = OAuth2Session(DISCORD_CLIENT_ID, token=token)
         
-        # Obtener servidores del usuario
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
-        logger.info(f"📋 Usuario tiene {len(user_guilds)} servidores")
         
-        # Filtrar solo donde tiene permisos de admin (0x8 = administrador)
         admin_guilds = [g for g in user_guilds if (int(g['permissions']) & 0x8) == 0x8]
-        logger.info(f"👑 Servidores con permisos admin: {len(admin_guilds)}")
         
         return render_template('dashboard.html', 
                              user=session['user'],
                              guilds=admin_guilds)
     except Exception as e:
-        logger.error(f"❌ Error en dashboard: {e}")
+        logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
-    """Página de configuración para un servidor específico"""
-    logger.info(f"⚙️ Configurando servidor ID: {guild_id}")
-    
     if 'oauth_token' not in session:
-        logger.warning("⚠️ Usuario no autenticado, redirigiendo")
         return redirect(url_for('home'))
     
     guild_name = request.args.get('name', 'Servidor')
-    logger.info(f"📌 Nombre del servidor: {guild_name}")
-    
     return render_template('guild_config.html', 
                          guild_id=guild_id,
                          guild_name=guild_name)
 
-# ==================== RUTAS DE API ====================
+# ==================== API ====================
 @app.route('/api/user/guilds')
 def api_user_guilds():
-    """API para obtener servidores del usuario"""
     if 'oauth_token' not in session:
         return jsonify({"error": "No autenticado"}), 401
     
@@ -158,48 +128,32 @@ def api_user_guilds():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ==================== RUTAS WEB ORIGINALES ====================
+# ==================== PÁGINA PRINCIPAL ====================
 @app.route('/')
 def home():
-    """Página principal"""
     try:
         user = session.get('user')
-        logger.info(f"🏠 Página principal cargada - Usuario: {user.get('username') if user else 'No autenticado'}")
         return render_template('index.html', user=user)
     except Exception as e:
-        logger.error(f"❌ Error en home: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/login/<guild_id>')
 def login_page(guild_id):
-    """Página de login legacy (por compatibilidad)"""
     try:
-        logger.info(f"🔐 Página de login legacy para guild: {guild_id}")
         return render_template('login.html', guild_id=guild_id)
     except Exception as e:
-        logger.error(f"❌ Error en login_page: {e}")
         return f"Error: {e}", 500
 
 def run():
-    """Ejecuta el servidor Flask"""
     port = int(os.environ.get("PORT", 10000))
-    logger.info(f"🌐 Servidor web iniciado en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
 
 def keep_alive():
-    """Inicia el servidor web en un thread separado"""
     try:
         thread = Thread(target=run, daemon=True)
         thread.start()
-        logger.info("✅ Thread del servidor web iniciado correctamente")
+        logger.info("✅ Servidor web iniciado")
         return thread
     except Exception as e:
-        logger.error(f"❌ Error iniciando servidor web: {e}")
+        logger.error(f"Error: {e}")
         return None
-
-# Para pruebas locales
-if __name__ == "__main__":
-    keep_alive()
-    # Mantener el programa vivo
-    while True:
-        time.sleep(1)
