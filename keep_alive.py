@@ -7,15 +7,14 @@ import time
 import requests
 import secrets
 from requests_oauthlib import OAuth2Session
+from datetime import datetime
+import pytz
 
-# === SOLUCIÓN PARA OAUTH2 EN RENDER ===
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-# ======================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuración de Discord OAuth
 DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
 DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET', '')
 RENDER_URL = os.environ.get('RENDER_EXTERNAL_URL', 'https://naerzone-bot.onrender.com')
@@ -82,7 +81,7 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ==================== DASHBOARD ====================
+# ==================== DASHBOARD PRINCIPAL ====================
 @app.route('/dashboard')
 def dashboard():
     if 'oauth_token' not in session:
@@ -95,16 +94,33 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        logger.info(f"📋 Usuario tiene {len(user_guilds)} servidores en total")
+        # Obtener lista de servidores donde está el bot (esto requeriría otra API)
+        # Por ahora, simulamos algunos para el ejemplo
+        # En un caso real, necesitarías el token del bot para consultar sus guilds
         
         admin_guilds = []
+        from database import Database
+        db = Database()
+        import asyncio
+        
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
-            logger.info(f"   - {g['name']} (ID: {g['id']}) - Admin: {is_admin}")
             if is_admin:
-                admin_guilds.append(g)
-        
-        logger.info(f"👑 Servidores con permisos admin: {len(admin_guilds)}")
+                # Verificar si el bot está en este servidor
+                # Esto es una simulación - en realidad necesitarías el bot para saberlo
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                config = loop.run_until_complete(db.obtener_config(g['id']))
+                loop.close()
+                
+                guild_info = {
+                    'id': g['id'],
+                    'name': g['name'],
+                    'icon': g.get('icon'),
+                    'bot_esta': config is not None,  # Si tiene config, el bot está
+                    'configurado': config is not None
+                }
+                admin_guilds.append(guild_info)
         
         return render_template('dashboard.html', 
                              user=session['user'],
@@ -113,36 +129,40 @@ def dashboard():
         logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
-# ==================== RUTA DE CONFIGURACIÓN ====================
+# ==================== CONFIGURACIÓN DE SERVIDOR ====================
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
-    """Página de configuración para un servidor específico"""
-    logger.info(f"⚙️ ===== NUEVA CONFIGURACIÓN =====")
-    logger.info(f"⚙️ guild_id recibido: '{guild_id}'")
+    logger.info(f"⚙️ Configurando servidor ID: {guild_id}")
     
     if 'oauth_token' not in session:
-        logger.warning("⚠️ Usuario no autenticado, redirigiendo")
         return redirect(url_for('home'))
     
-    # Validar que guild_id no esté vacío
-    if not guild_id or guild_id == '':
-        logger.error("❌ ERROR CRÍTICO: guild_id está vacío en la URL")
-        return "Error: ID de servidor no válido (vacío)", 400
+    if not guild_id:
+        return "Error: ID de servidor no válido", 400
     
     guild_name = request.args.get('name', 'Servidor')
-    logger.info(f"📌 Nombre del servidor: {guild_name}")
-    logger.info(f"📌 Renderizando template con guild_id: {guild_id}")
+    
+    # Obtener configuración actual si existe
+    from database import Database
+    db = Database()
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    config = loop.run_until_complete(db.obtener_config(guild_id))
+    credenciales = loop.run_until_complete(db.obtener_credenciales(guild_id))
+    loop.close()
     
     return render_template('guild_config.html', 
                          guild_id=guild_id,
-                         guild_name=guild_name)
+                         guild_name=guild_name,
+                         config=config,
+                         credenciales=credenciales)
 
 # ==================== API ====================
 @app.route('/api/user/guilds')
 def api_user_guilds():
     if 'oauth_token' not in session:
         return jsonify({"error": "No autenticado"}), 401
-    
     try:
         token = session['oauth_token']
         discord = OAuth2Session(DISCORD_CLIENT_ID, token=token)
@@ -169,7 +189,6 @@ def login_page(guild_id):
 
 def run():
     port = int(os.environ.get("PORT", 10000))
-    logger.info(f"🌐 Servidor web escuchando en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
 
 def keep_alive():
@@ -179,5 +198,5 @@ def keep_alive():
         logger.info("✅ Servidor web iniciado")
         return thread
     except Exception as e:
-        logger.error(f"Error iniciando servidor: {e}")
+        logger.error(f"Error: {e}")
         return None
