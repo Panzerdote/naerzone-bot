@@ -80,7 +80,7 @@
 
         .guilds-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
         }
 
@@ -134,13 +134,46 @@
             background: rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             font-size: 0.9rem;
-            color: #b9bbbe;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .status-bot-present {
+            background: #3ba55c;
+            color: white;
+        }
+
+        .status-bot-absent {
+            background: #ed4245;
+            color: white;
+        }
+
+        .status-configured {
+            background: #5865F2;
+            color: white;
+        }
+
+        .status-not-configured {
+            background: #faa81a;
+            color: white;
+        }
+
+        .guild-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
         }
 
         .btn-config {
-            display: inline-block;
-            width: 100%;
-            padding: 12px;
+            flex: 1;
+            padding: 10px;
             background: #5865F2;
             color: white;
             text-decoration: none;
@@ -148,12 +181,34 @@
             text-align: center;
             font-weight: 600;
             transition: background 0.3s;
-            border: none;
-            cursor: pointer;
         }
 
-        .btn-config:hover {
+        .btn-config:hover:not(.disabled) {
             background: #4752c4;
+        }
+
+        .btn-config.disabled {
+            background: #4f545c;
+            cursor: not-allowed;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .btn-invite {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid #5865F2;
+            color: #5865F2;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-invite:hover {
+            background: rgba(88, 101, 242, 0.1);
         }
 
         .empty-state {
@@ -178,7 +233,6 @@
             border-radius: 8px;
             margin-top: 20px;
             font-weight: 600;
-            transition: background 0.3s;
         }
 
         .btn-primary:hover {
@@ -197,21 +251,6 @@
             color: #5865F2;
             text-decoration: none;
             font-weight: 600;
-        }
-
-        .invite-link a:hover {
-            text-decoration: underline;
-        }
-
-        /* Debug info */
-        .debug-info {
-            margin-top: 30px;
-            padding: 15px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            font-size: 0.8rem;
-            color: #b9bbbe;
-            display: none;
         }
 
         @media (max-width: 768px) {
@@ -243,7 +282,7 @@
 
         <h1>📋 <span>Mis servidores</span></h1>
         <p style="color: #b9bbbe; margin-bottom: 30px;">
-            Selecciona un servidor para configurar las credenciales de Naerzone
+            Selecciona un servidor para configurar el bot
         </p>
 
         {% if guilds %}
@@ -263,23 +302,43 @@
                         </div>
                         
                         <div class="guild-status">
-                            ✅ Tienes permisos de administrador<br>
-                            <small style="color: #5865F2;">ID: {{ guild.id }}</small>
+                            <div style="margin-bottom: 8px;">
+                                {% if guild.bot_esta %}
+                                    <span class="status-badge status-bot-present">✅ Bot presente</span>
+                                {% else %}
+                                    <span class="status-badge status-bot-absent">❌ Bot no está</span>
+                                {% endif %}
+                                
+                                {% if guild.configurado %}
+                                    <span class="status-badge status-configured">⚙️ Configurado</span>
+                                {% else %}
+                                    <span class="status-badge status-not-configured">⚠️ Sin configurar</span>
+                                {% endif %}
+                            </div>
+                            <small>ID: {{ guild.id }}</small>
                         </div>
                         
-                        <!-- IMPORTANTE: El guild.id se pasa correctamente -->
-                        <a href="/guild/{{ guild.id }}?name={{ guild.name | urlencode }}" 
-                           class="btn-config"
-                           onclick="console.log('ID enviado: {{ guild.id }}')">
-                            ⚙️ Configurar credenciales
-                        </a>
+                        <div class="guild-actions">
+                            {% if guild.bot_esta %}
+                                <a href="/guild/{{ guild.id }}?name={{ guild.name | urlencode }}" 
+                                   class="btn-config {% if not guild.bot_esta %}disabled{% endif %}">
+                                    ⚙️ Configurar
+                                </a>
+                            {% else %}
+                                <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot&guild_id={{ guild.id }}" 
+                                   class="btn-invite" target="_blank">
+                                    ➕ Invitar bot
+                                </a>
+                                <span class="btn-config disabled">⚙️ Configurar</span>
+                            {% endif %}
+                        </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
             <div class="empty-state">
-                <h3>No tienes servidores con el bot</h3>
-                <p>Para configurar un servidor, primero debes:</p>
+                <h3>No tienes servidores con permisos de administrador</h3>
+                <p>Para configurar un servidor, necesitas:</p>
                 <p style="margin: 20px 0; color: white;">
                     1️⃣ Invitar el bot a tu servidor<br>
                     2️⃣ Tener permisos de administrador
@@ -295,43 +354,6 @@
                 🔗 Hacer clic aquí para invitar
             </a>
         </div>
-
-        <!-- Debug info: muestra los datos que llegan -->
-        <div class="debug-info" id="debugInfo">
-            <strong>Información de depuración:</strong><br>
-            Usuario: {{ user.username if user else 'No autenticado' }}<br>
-            Servidores encontrados: {{ guilds|length if guilds else 0 }}<br>
-            {% if guilds %}
-                {% for guild in guilds %}
-                    - {{ guild.name }} (ID: {{ guild.id }})<br>
-                {% endfor %}
-            {% endif %}
-        </div>
     </div>
-
-    <script>
-        // Mostrar información de depuración en consola
-        console.log('📊 Dashboard cargado');
-        console.log('Usuario:', {{ user.username|tojson if user else 'null' }});
-        
-        {% if guilds %}
-            console.log('📋 Servidores:');
-            {% for guild in guilds %}
-                console.log('   - {{ guild.name }} (ID: {{ guild.id }})');
-            {% endfor %}
-        {% else %}
-            console.log('❌ No hay servidores');
-        {% endif %}
-
-        // Verificar que los enlaces tengan el ID
-        document.querySelectorAll('.btn-config').forEach((btn, index) => {
-            console.log(`🔗 Botón ${index + 1} - URL:`, btn.href);
-        });
-
-        // Opcional: mostrar debug info si hay problemas
-        if ({{ guilds|length if guilds else 0 }} === 0) {
-            document.getElementById('debugInfo').style.display = 'block';
-        }
-    </script>
 </body>
 </html>
