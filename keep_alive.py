@@ -95,7 +95,16 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        admin_guilds = [g for g in user_guilds if (int(g['permissions']) & 0x8) == 0x8]
+        logger.info(f"📋 Usuario tiene {len(user_guilds)} servidores en total")
+        
+        admin_guilds = []
+        for g in user_guilds:
+            is_admin = (int(g['permissions']) & 0x8) == 0x8
+            logger.info(f"   - {g['name']} (ID: {g['id']}) - Admin: {is_admin}")
+            if is_admin:
+                admin_guilds.append(g)
+        
+        logger.info(f"👑 Servidores con permisos admin: {len(admin_guilds)}")
         
         return render_template('dashboard.html', 
                              user=session['user'],
@@ -104,11 +113,12 @@ def dashboard():
         logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
-# ==================== RUTA CORREGIDA - ¡AQUÍ ESTABA EL ERROR! ====================
+# ==================== RUTA DE CONFIGURACIÓN ====================
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
     """Página de configuración para un servidor específico"""
-    logger.info(f"⚙️ Accediendo a configuración para guild_id: {guild_id}")
+    logger.info(f"⚙️ ===== NUEVA CONFIGURACIÓN =====")
+    logger.info(f"⚙️ guild_id recibido: '{guild_id}'")
     
     if 'oauth_token' not in session:
         logger.warning("⚠️ Usuario no autenticado, redirigiendo")
@@ -116,13 +126,13 @@ def guild_config(guild_id):
     
     # Validar que guild_id no esté vacío
     if not guild_id or guild_id == '':
-        logger.error("❌ guild_id vacío en la URL")
-        return "Error: ID de servidor no válido", 400
+        logger.error("❌ ERROR CRÍTICO: guild_id está vacío en la URL")
+        return "Error: ID de servidor no válido (vacío)", 400
     
     guild_name = request.args.get('name', 'Servidor')
     logger.info(f"📌 Nombre del servidor: {guild_name}")
+    logger.info(f"📌 Renderizando template con guild_id: {guild_id}")
     
-    # Pasar los valores al template
     return render_template('guild_config.html', 
                          guild_id=guild_id,
                          guild_name=guild_name)
