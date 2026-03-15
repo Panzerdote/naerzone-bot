@@ -1,0 +1,31 @@
+# fly.toml - Configuración para Fly.io
+app = "naerzone-bot"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Las variables sensibles van en secrets, no aquí
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false  # IMPORTANTE: Evita que se duerma
+  auto_start_machines = true
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
