@@ -15,18 +15,11 @@
             background: linear-gradient(135deg, #1a1b2f 0%, #2a2b4a 100%);
             color: white;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
         .container {
-            max-width: 600px;
-            width: 100%;
-            padding: 40px;
-            background: rgba(44, 47, 51, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 800px;
+            margin: 0 auto;
         }
         h1 {
             text-align: center;
@@ -35,41 +28,33 @@
         h1 span {
             color: #5865F2;
         }
-        .server-name {
+        .server-header {
             background: rgba(88, 101, 242, 0.1);
-            padding: 15px;
-            border-radius: 8px;
+            padding: 20px;
+            border-radius: 15px;
             text-align: center;
             margin-bottom: 30px;
             border: 1px solid rgba(88, 101, 242, 0.3);
-            word-break: break-word;
+        }
+        .server-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
         .server-id {
             font-size: 0.9rem;
-            color: #5865F2;
-            margin-top: 10px;
-            padding: 5px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 4px;
-        }
-        .warning {
-            background: rgba(250, 168, 26, 0.1);
-            border-left: 4px solid #faa81a;
-            padding: 15px;
-            margin-bottom: 30px;
-            border-radius: 5px;
-        }
-        .warning p {
-            color: #faa81a;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .warning small {
             color: #b9bbbe;
-            font-size: 0.85rem;
-            line-height: 1.4;
-            display: block;
+        }
+        .config-section {
+            background: rgba(44, 47, 51, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #5865F2;
         }
         .form-group {
             margin-bottom: 20px;
@@ -80,7 +65,7 @@
             color: #b9bbbe;
             font-size: 0.9rem;
         }
-        input {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #40444b;
@@ -89,11 +74,22 @@
             color: white;
             font-size: 1rem;
         }
-        input:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #5865F2;
         }
-        button {
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .time-group {
+            display: flex;
+            gap: 10px;
+        }
+        .time-group input {
+            width: 100px;
+        }
+        .btn-primary {
             width: 100%;
             padding: 14px;
             background: #5865F2;
@@ -104,14 +100,9 @@
             font-weight: 600;
             cursor: pointer;
             transition: background 0.3s;
-            margin-bottom: 15px;
         }
-        button:hover:not(:disabled) {
+        .btn-primary:hover {
             background: #4752c4;
-        }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
         .btn-secondary {
             display: inline-block;
@@ -123,28 +114,25 @@
             border-radius: 8px;
             text-align: center;
             transition: all 0.3s;
-            width: 100%;
         }
         .btn-secondary:hover {
             background: rgba(88, 101, 242, 0.1);
         }
-        .error-message {
-            color: #ed4245;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            display: none;
-            padding: 10px;
-            background: rgba(237, 66, 69, 0.1);
+        .message {
+            padding: 15px;
             border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
         }
-        .success-message {
+        .message.success {
+            background: rgba(59, 165, 92, 0.2);
+            border: 1px solid #3ba55c;
             color: #3ba55c;
-            font-size: 0.9rem;
-            margin-top: 5px;
-            display: none;
-            padding: 10px;
-            background: rgba(59, 165, 92, 0.1);
-            border-radius: 8px;
+        }
+        .message.error {
+            background: rgba(237, 66, 69, 0.2);
+            border: 1px solid #ed4245;
+            color: #ed4245;
         }
         .loader {
             display: none;
@@ -160,11 +148,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
         .info-box {
             background: rgba(88, 101, 242, 0.1);
             border-radius: 8px;
@@ -173,21 +156,9 @@
             font-size: 0.9rem;
             color: #b9bbbe;
         }
-        .info-box ul {
-            padding-left: 20px;
-            margin-top: 10px;
-        }
-        .info-box li {
-            margin-bottom: 5px;
-        }
-        .debug-info {
-            margin-top: 20px;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 5px;
-            font-size: 0.8rem;
-            color: #b9bbbe;
-            display: none;
+        .channel-selector {
+            max-height: 200px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -195,180 +166,192 @@
     <div class="container">
         <h1>🔐 <span>Naerzone</span> Bot</h1>
         
-        <div class="server-name">
-            ⚙️ Configurando: <strong>{{ guild_name }}</strong>
-            <div class="server-id">
-                📌 ID del servidor: <strong>{{ guild_id }}</strong>
-            </div>
+        <div class="server-header">
+            <div class="server-name">{{ guild_name }}</div>
+            <div class="server-id">ID: {{ guild_id }}</div>
         </div>
 
-        <div class="warning">
-            <p>⚠️ <strong>IMPORTANTE</strong></p>
-            <small>
-                • Puedes crear una cuenta NUEVA en Naerzone solo para el bot<br>
-                • Si usas tu cuenta personal, es bajo tu responsabilidad<br>
-                • Las credenciales se guardan encriptadas
-            </small>
-        </div>
+        <div id="message" class="message"></div>
 
-        <form id="configForm">
-            <!-- IMPORTANTE: Estos campos ocultos deben tener los valores -->
-            <input type="hidden" id="guild_id" name="guild_id" value="{{ guild_id }}">
-            <input type="hidden" id="guild_name" name="guild_name" value="{{ guild_name }}">
+        <!-- SECCIÓN 1: CREDENCIALES DE NAERZONE -->
+        <div class="config-section">
+            <h2 class="section-title">🔑 Credenciales de Naerzone</h2>
             
             <div class="form-group">
                 <label>Usuario de Naerzone</label>
-                <input type="text" id="usuario" name="usuario" required placeholder="Ej: mi_usuario">
+                <input type="text" id="usuario" value="{{ credenciales.usuario if credenciales else '' }}" 
+                       placeholder="Ej: mi_usuario">
             </div>
 
             <div class="form-group">
                 <label>Contraseña de Naerzone</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••">
+                <input type="password" id="password" placeholder="••••••••">
             </div>
 
-            <div class="error-message" id="errorMsg"></div>
-            <div class="success-message" id="successMsg"></div>
-            <div class="loader" id="loader"></div>
+            <button class="btn-primary" id="btnGuardarCredenciales">Guardar credenciales</button>
+        </div>
 
-            <button type="submit" id="submitBtn">Guardar credenciales</button>
-        </form>
+        <!-- SECCIÓN 2: CONFIGURACIÓN DEL BOT -->
+        <div class="config-section">
+            <h2 class="section-title">⚙️ Configuración del bot</h2>
+            
+            <div class="form-group">
+                <label>Canal de envío</label>
+                <select id="canal" class="channel-selector">
+                    <option value="">-- Selecciona un canal --</option>
+                    <!-- Los canales se cargarán vía API -->
+                </select>
+                <small style="color: #b9bbbe;">Selecciona el canal donde se publicarán las ofertas</small>
+            </div>
 
-        <div class="button-group">
+            <div class="form-group">
+                <label>Hora de envío</label>
+                <div class="time-group">
+                    <input type="number" id="hora" min="0" max="23" value="{{ config.hora_envio if config else 22 }}" placeholder="HH">
+                    <span style="color: #b9bbbe; align-self: center;">:</span>
+                    <input type="number" id="minuto" min="0" max="59" value="{{ config.minuto_envio if config else 0 }}" placeholder="MM">
+                </div>
+                <small style="color: #b9bbbe;">Hora en formato 24h (ej: 22:30 para las 10:30 PM)</small>
+            </div>
+
+            <div class="form-group">
+                <label>Mensaje personalizado</label>
+                <textarea id="mensaje" placeholder="@everyone atentos que tenemos promo, joder.">{{ config.mensaje_personalizado if config else '' }}</textarea>
+                <small style="color: #b9bbbe;">Este mensaje se enviará ANTES de la oferta (puedes usar @everyone)</small>
+            </div>
+
+            <button class="btn-primary" id="btnGuardarConfig">Guardar configuración</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
             <a href="/dashboard" class="btn-secondary">← Volver al dashboard</a>
         </div>
 
-        <div class="info-box">
-            <p><strong>📌 Nota:</strong></p>
-            <ul>
-                <li>Las credenciales se verifican con Naerzone antes de guardar</li>
-                <li>Cada servidor tiene sus propias credenciales</li>
-                <li>Puedes cambiarlas en cualquier momento</li>
-            </ul>
-        </div>
-
-        <!-- Debug info - se muestra solo si hay error -->
-        <div class="debug-info" id="debugInfo">
-            <strong>🔍 Información de depuración:</strong><br>
-            <span id="debugContent"></span>
-        </div>
+        <div class="loader" id="loader"></div>
     </div>
 
     <script>
-        // Obtener referencias a los elementos
-        const form = document.getElementById('configForm');
-        const usuario = document.getElementById('usuario');
-        const password = document.getElementById('password');
-        const guildId = document.getElementById('guild_id');
-        const guildName = document.getElementById('guild_name');
-        const submitBtn = document.getElementById('submitBtn');
-        const errorMsg = document.getElementById('errorMsg');
-        const successMsg = document.getElementById('successMsg');
+        const guildId = "{{ guild_id }}";
+        const guildName = "{{ guild_name }}";
+        
+        const messageDiv = document.getElementById('message');
         const loader = document.getElementById('loader');
-        const debugInfo = document.getElementById('debugInfo');
-        const debugContent = document.getElementById('debugContent');
 
-        // Mostrar valores al cargar la página
-        console.log('🔍 ===== VALORES AL CARGAR =====');
-        console.log('guild_id:', guildId.value);
-        console.log('guild_name:', guildName.value);
-        console.log('URL actual:', window.location.href);
+        function mostrarMensaje(texto, tipo) {
+            messageDiv.textContent = texto;
+            messageDiv.className = `message ${tipo}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
 
-        // Validación al cargar
-        window.addEventListener('load', function() {
-            if (!guildId.value || guildId.value === '') {
-                debugInfo.style.display = 'block';
-                debugContent.innerHTML = `
-                    ❌ ERROR: guild_id está vacío<br>
-                    URL: ${window.location.href}<br>
-                    Esto indica que el ID no se pasó correctamente desde el dashboard.
-                `;
-                errorMsg.textContent = 'Error: ID de servidor no válido. Por favor, vuelve al dashboard y selecciona el servidor nuevamente.';
-                errorMsg.style.display = 'block';
-            } else {
-                console.log('✅ guild_id válido:', guildId.value);
-            }
-        });
+        // ========== CREDENCIALES ==========
+        document.getElementById('btnGuardarCredenciales').addEventListener('click', async () => {
+            const usuario = document.getElementById('usuario').value;
+            const password = document.getElementById('password').value;
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            // Validar que guild_id no esté vacío
-            if (!guildId.value || guildId.value === '') {
-                errorMsg.textContent = 'Error: ID del servidor no válido. Vuelve al dashboard y selecciona el servidor nuevamente.';
-                errorMsg.style.display = 'block';
+            if (!usuario || !password) {
+                mostrarMensaje('❌ Completa todos los campos', 'error');
                 return;
             }
 
-            console.log('📤 Enviando formulario con guild_id:', guildId.value);
-
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
-            submitBtn.disabled = true;
             loader.style.display = 'block';
 
             try {
-                // 1. Verificar credenciales con Naerzone
-                console.log('🔍 Verificando credenciales...');
+                // Verificar credenciales
                 const verifyRes = await fetch('/api/verificar-credenciales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: usuario.value,
-                        password: password.value
-                    })
+                    body: JSON.stringify({ usuario, password })
                 });
-
                 const verifyData = await verifyRes.json();
-                console.log('📊 Respuesta verificación:', verifyData);
 
                 if (!verifyData.valido) {
                     throw new Error('Credenciales inválidas');
                 }
 
-                // 2. Guardar en base de datos
-                console.log('💾 Guardando credenciales...');
+                // Guardar
                 const saveRes = await fetch('/api/guardar-credenciales', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        guild_id: guildId.value,
-                        guild_name: guildName.value,
-                        usuario: usuario.value,
-                        password: password.value
+                        guild_id: guildId,
+                        guild_name: guildName,
+                        usuario,
+                        password
                     })
                 });
-
                 const saveData = await saveRes.json();
-                console.log('📊 Respuesta guardado:', saveData);
 
                 if (!saveData.exito) {
                     throw new Error(saveData.error || 'Error al guardar');
                 }
 
-                successMsg.textContent = '✅ Credenciales guardadas correctamente';
-                successMsg.style.display = 'block';
+                mostrarMensaje('✅ Credenciales guardadas correctamente', 'success');
                 
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 2000);
-
             } catch (error) {
-                console.error('❌ Error:', error);
-                errorMsg.textContent = error.message;
-                errorMsg.style.display = 'block';
-                
-                debugInfo.style.display = 'block';
-                debugContent.innerHTML = `
-                    Error: ${error.message}<br>
-                    guild_id: ${guildId.value}<br>
-                    guild_name: ${guildName.value}<br>
-                    usuario: ${usuario.value}
-                `;
+                mostrarMensaje(`❌ ${error.message}`, 'error');
             } finally {
-                submitBtn.disabled = false;
                 loader.style.display = 'none';
             }
         });
+
+        // ========== CONFIGURACIÓN ==========
+        async function cargarCanales() {
+            // Esto requeriría una API que devuelva los canales del servidor
+            // Por ahora, dejamos que el usuario ingrese el ID manualmente
+            console.log('Cargar canales no implementado');
+        }
+
+        document.getElementById('btnGuardarConfig').addEventListener('click', async () => {
+            const canalId = document.getElementById('canal').value;
+            const hora = parseInt(document.getElementById('hora').value);
+            const minuto = parseInt(document.getElementById('minuto').value);
+            const mensaje = document.getElementById('mensaje').value;
+
+            if (!canalId) {
+                mostrarMensaje('❌ Selecciona un canal', 'error');
+                return;
+            }
+
+            if (isNaN(hora) || hora < 0 || hora > 23 || isNaN(minuto) || minuto < 0 || minuto > 59) {
+                mostrarMensaje('❌ Hora inválida', 'error');
+                return;
+            }
+
+            loader.style.display = 'block';
+
+            try {
+                const saveRes = await fetch('/api/guardar-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        guild_id: guildId,
+                        canal_id: canalId,
+                        canal_nombre: 'Canal seleccionado',
+                        hora,
+                        minuto,
+                        mensaje_personalizado: mensaje
+                    })
+                });
+                const saveData = await saveRes.json();
+
+                if (!saveData.exito) {
+                    throw new Error('Error al guardar configuración');
+                }
+
+                mostrarMensaje('✅ Configuración guardada correctamente', 'success');
+                
+            } catch (error) {
+                mostrarMensaje(`❌ ${error.message}`, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        // Cargar configuración actual
+        cargarCanales();
     </script>
 </body>
 </html>
