@@ -18,7 +18,7 @@ from discord.ui import Button, View
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ==================== IMPORTACIÓN CORREGIDA ====================
+# ==================== IMPORTACIONES CORREGIDAS ====================
 # Añadir el directorio raíz al path
 import sys
 import os
@@ -27,17 +27,14 @@ sys.path.insert(0, ROOT_DIR)
 
 logger.info(f"📁 Directorio raíz añadido al path: {ROOT_DIR}")
 
-# Intentar importar keep_alive
-try:
-    from keep_alive import keep_alive
-    logger.info("✅ keep_alive importado correctamente")
-except ImportError as e:
-    logger.error(f"❌ Error importando keep_alive: {e}")
-    # Fallback
-    def keep_alive():
-        logger.warning("⚠️ Usando keep_alive dummy")
-        return None
-# ============================================================================
+# Importar keep_alive
+from keep_alive import keep_alive, app
+
+# Importar y conectar rutas API
+from web import init_api_routes
+init_api_routes(app)  # Esto añade las rutas API a la misma app Flask
+logger.info("✅ Rutas API conectadas correctamente")
+# ===================================================================
 
 # ==================== PATCH PARA PYTHON 3.12+ (audioop) ====================
 os.environ["DISCORD_NO_VOICE"] = "true"
@@ -278,7 +275,7 @@ intents.guilds = True
 
 class NaerzoneBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="n!", intents=intents, help_command=None)  # <--- DESACTIVAR COMANDO HELP POR DEFECTO
+        super().__init__(command_prefix="n!", intents=intents, help_command=None)
         self.db = Database()
         self.tareas_programadas = {}
     
@@ -303,13 +300,16 @@ class NaerzoneBot(commands.Bot):
         )
         
         if canal:
+            # Obtener la URL base
+            base_url = os.environ.get('RENDER_EXTERNAL_URL', 'https://naerzone-bot.onrender.com')
+            
             embed = discord.Embed(
                 title="🎉 ¡Gracias por invitarme!",
                 description=(
                     "Soy el bot de **Ofertas Naerzone**\n\n"
                     "**IMPORTANTE:** Para funcionar, necesito tus credenciales de Naerzone.\n\n"
                     "🌐 **Ve a la web de configuración:**\n"
-                    f"```\nhttps://naerzone-bot.onrender.com\n```\n\n"
+                    f"```\n{base_url}\n```\n\n"
                     "📝 **Pasos:**\n"
                     "1️⃣ Ve a la web y haz clic en 'Configurar mi servidor'\n"
                     "2️⃣ Ingresa tu usuario y contraseña de Naerzone\n"
@@ -463,8 +463,8 @@ class ConfigCog(commands.Cog):
         await self.bot.db.guardar_config(
             ctx.guild.id,
             canal.id,
-            22,  # hora por defecto
-            0    # minuto por defecto
+            22,
+            0
         )
         
         await ctx.send(f"✅ Canal configurado: {canal.mention}")
@@ -513,7 +513,7 @@ class ConfigCog(commands.Cog):
         else:
             await ctx.send("❌ No se pudo obtener la promoción")
     
-    @commands.command(name="comandos")  # <--- CAMBIADO DE "ayuda" a "comandos"
+    @commands.command(name="comandos")
     async def comandos(self, ctx):
         """Muestra la lista de comandos disponibles"""
         embed = discord.Embed(
