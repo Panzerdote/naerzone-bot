@@ -1,0 +1,39 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Naerzone Bot
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Fly.io CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Set Discord token
+        run: flyctl secrets set DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}" --app naerzone-bot
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Set Supabase URL
+        run: flyctl secrets set SUPABASE_URL="${{ secrets.SUPABASE_URL }}" --app naerzone-bot
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Set Supabase Key
+        run: flyctl secrets set SUPABASE_KEY="${{ secrets.SUPABASE_KEY }}" --app naerzone-bot
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
