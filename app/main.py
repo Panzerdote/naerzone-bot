@@ -1,5 +1,4 @@
 # app/main.py
-from keep_alive import keep_alive
 import os
 import sys
 import types
@@ -18,6 +17,32 @@ from discord.ui import Button, View
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ==================== IMPORTACIÓN CORREGIDA (VERSIÓN ABSOLUTA) ====================
+# Añadir el directorio raíz al path
+import sys
+import os
+import importlib.util
+
+# Obtener la ruta absoluta del directorio raíz (un nivel arriba de app/)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT_DIR)  # Insertar al principio del path
+
+logger.info(f"📁 Directorio raíz añadido al path: {ROOT_DIR}")
+
+# Intentar importar keep_alive
+try:
+    from keep_alive import keep_alive
+    logger.info("✅ keep_alive importado correctamente")
+except ImportError as e:
+    logger.error(f"❌ Error importando keep_alive: {e}")
+    logger.error(f"Archivos en el directorio raíz: {os.listdir(ROOT_DIR)}")
+    
+    # Fallback: definir una función dummy si no se puede importar
+    def keep_alive():
+        logger.warning("⚠️ Usando keep_alive dummy (el archivo real no se encontró)")
+        return None
+# ============================================================================
 
 # ==================== PATCH PARA PYTHON 3.12+ (audioop) ====================
 os.environ["DISCORD_NO_VOICE"] = "true"
@@ -39,7 +64,7 @@ if 'audioop' not in sys.modules:
     logger.info("✅ Parche de audioop aplicado correctamente")
 # ============================================================================
 
-# Importar base de datos
+# [EL RESTO DE TU CÓDIGO SIGUE IGUAL - IMPORTACIONES DE database, etc.]
 from database import Database
 
 # URLs fijas
@@ -229,7 +254,7 @@ class PromocionDiaria:
         else:
             embed.set_thumbnail(url=IMAGEN_PROMO)
         
-        # Calcular próximo envío (igual que en tu código original)
+        # Calcular próximo envío
         tz = pytz.timezone('America/Santiago')
         ahora = datetime.now(tz)
         proximo_envio = ahora.replace(hour=22, minute=0, second=0, microsecond=0)
@@ -289,7 +314,7 @@ class NaerzoneBot(commands.Bot):
                     "Soy el bot de **Ofertas Naerzone**\n\n"
                     "**IMPORTANTE:** Para funcionar, necesito tus credenciales de Naerzone.\n\n"
                     "🌐 **Ve a la web de configuración:**\n"
-                    "```\nhttps://TU-APP.fly.dev\n```\n\n"
+                    f"```\nhttps://naerzone-bot.onrender.com\n```\n\n"
                     "📝 **Pasos:**\n"
                     "1️⃣ Ve a la web y haz clic en 'Configurar mi servidor'\n"
                     "2️⃣ Ingresa tu usuario y contraseña de Naerzone\n"
@@ -493,23 +518,49 @@ class ConfigCog(commands.Cog):
             await ctx.send(embed=promo.formatear_mensaje(), view=promo.crear_botones())
         else:
             await ctx.send("❌ No se pudo obtener la promoción")
+    
+    @commands.command(name="ayuda", aliases=["help"])
+    async def ayuda(self, ctx):
+        """Muestra la ayuda del bot"""
+        embed = discord.Embed(
+            title="📚 Comandos del Bot",
+            description="Bot de ofertas diarias de Naerzone",
+            color=0x5865F2
+        )
+        
+        embed.add_field(
+            name="⚙️ Configuración (Admin)",
+            value="`n!config` - Ver configuración\n"
+                  "`n!config canal #canal` - Elegir canal\n"
+                  "`n!config hora HH MM` - Ajustar hora",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🛒 Promociones",
+            value="`n!promo` - Ver oferta actual\n",
+            inline=False
+        )
+        
+        embed.set_footer(text="Creado para la comunidad de Naerzone")
+        
+        await ctx.send(embed=embed)
 # ========================================================
 
-# ==================== INICIO ====================
+# ==================== INICIO DEL BOT ====================
 if __name__ == "__main__":
-    from web import start_web_server
-    
-    # Iniciar servidor web en segundo plano
-    start_web_server()
-    
-    # Iniciar bot
+    # Verificar token
     token = os.environ.get('DISCORD_TOKEN')
     if not token:
         logger.error("❌ FALTA DISCORD_TOKEN")
         sys.exit(1)
     
-    bot = NaerzoneBot()
-        # Iniciar servidor web ANTES del bot
+    # Iniciar servidor web en segundo plano
+    logger.info("🚀 Iniciando servidor web...")
     keep_alive()
+    
     # Iniciar bot
+    logger.info("🤖 Iniciando bot de Discord...")
+    bot = NaerzoneBot()
     bot.run(token)
+# ========================================================
