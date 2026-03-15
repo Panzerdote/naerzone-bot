@@ -18,15 +18,12 @@ from discord.ui import Button, View
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ==================== IMPORTACIÓN CORREGIDA (VERSIÓN ABSOLUTA) ====================
+# ==================== IMPORTACIÓN CORREGIDA ====================
 # Añadir el directorio raíz al path
 import sys
 import os
-import importlib.util
-
-# Obtener la ruta absoluta del directorio raíz (un nivel arriba de app/)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT_DIR)  # Insertar al principio del path
+sys.path.insert(0, ROOT_DIR)
 
 logger.info(f"📁 Directorio raíz añadido al path: {ROOT_DIR}")
 
@@ -36,11 +33,9 @@ try:
     logger.info("✅ keep_alive importado correctamente")
 except ImportError as e:
     logger.error(f"❌ Error importando keep_alive: {e}")
-    logger.error(f"Archivos en el directorio raíz: {os.listdir(ROOT_DIR)}")
-    
-    # Fallback: definir una función dummy si no se puede importar
+    # Fallback
     def keep_alive():
-        logger.warning("⚠️ Usando keep_alive dummy (el archivo real no se encontró)")
+        logger.warning("⚠️ Usando keep_alive dummy")
         return None
 # ============================================================================
 
@@ -64,7 +59,7 @@ if 'audioop' not in sys.modules:
     logger.info("✅ Parche de audioop aplicado correctamente")
 # ============================================================================
 
-# [EL RESTO DE TU CÓDIGO SIGUE IGUAL - IMPORTACIONES DE database, etc.]
+# Importar database
 from database import Database
 
 # URLs fijas
@@ -235,7 +230,7 @@ class PromocionDiaria:
         self.fecha = datetime.now(pytz.timezone('America/Santiago'))
 
     def formatear_mensaje(self):
-        """EXACTAMENTE el mismo formato que tenías originalmente"""
+        """Formato original del mensaje"""
         embed = discord.Embed(
             title="Hoy en descuento",
             color=0x5865F2,
@@ -283,7 +278,7 @@ intents.guilds = True
 
 class NaerzoneBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="n!", intents=intents)
+        super().__init__(command_prefix="n!", intents=intents, help_command=None)  # <--- DESACTIVAR COMANDO HELP POR DEFECTO
         self.db = Database()
         self.tareas_programadas = {}
     
@@ -292,7 +287,7 @@ class NaerzoneBot(commands.Bot):
     
     async def on_ready(self):
         logger.info(f'🤖 Bot {self.user} conectado a Discord!')
-        await self.change_presence(activity=discord.Game(name="n!ayuda | Ofertas Naerzone"))
+        await self.change_presence(activity=discord.Game(name="n!comandos | Ofertas Naerzone"))
         
         # Iniciar tarea de programación
         self.loop.create_task(self.programar_envios())
@@ -321,9 +316,9 @@ class NaerzoneBot(commands.Bot):
                     "3️⃣ ¡Listo! El bot comenzará a funcionar\n\n"
                     "⚠️ **Importante sobre las credenciales:**\n"
                     "• Puedes usar una cuenta nueva creada solo para el bot\n"
-                    "• Si usas tu cuenta personal, es bajo tu responsabilidad\n"
-                    "• Las credenciales se guardan encriptadas en nuestra base de datos\n\n"
-                    "📌 **Comandos básicos (después de configurar):**\n"
+                    "• Si usas tu cuenta personal, es bajo tu responsabilidad\n\n"
+                    "📌 **Comandos disponibles:**\n"
+                    "`n!comandos` - Ver todos los comandos\n"
                     "`n!config canal #canal` - Elegir canal\n"
                     "`n!config hora 22 0` - Ajustar hora\n"
                     "`n!promo` - Ver oferta manualmente"
@@ -356,7 +351,6 @@ class NaerzoneBot(commands.Bot):
             session, success = login_web(credenciales['usuario'], credenciales['password'])
             if not success:
                 logger.error(f"❌ Login fallido para {guild.name}")
-                # Notificar al canal que hay problema con las credenciales
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone con tus credenciales. Por favor, verifica tu usuario y contraseña en la web de configuración.")
                 return
             
@@ -519,9 +513,9 @@ class ConfigCog(commands.Cog):
         else:
             await ctx.send("❌ No se pudo obtener la promoción")
     
-    @commands.command(name="ayuda", aliases=["help"])
-    async def ayuda(self, ctx):
-        """Muestra la ayuda del bot"""
+    @commands.command(name="comandos")  # <--- CAMBIADO DE "ayuda" a "comandos"
+    async def comandos(self, ctx):
+        """Muestra la lista de comandos disponibles"""
         embed = discord.Embed(
             title="📚 Comandos del Bot",
             description="Bot de ofertas diarias de Naerzone",
@@ -539,6 +533,12 @@ class ConfigCog(commands.Cog):
         embed.add_field(
             name="🛒 Promociones",
             value="`n!promo` - Ver oferta actual\n",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="ℹ️ Información",
+            value="`n!comandos` - Mostrar esta ayuda",
             inline=False
         )
         
