@@ -104,12 +104,25 @@ def dashboard():
         logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
+# ==================== RUTA CORREGIDA - ¡AQUÍ ESTABA EL ERROR! ====================
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
+    """Página de configuración para un servidor específico"""
+    logger.info(f"⚙️ Accediendo a configuración para guild_id: {guild_id}")
+    
     if 'oauth_token' not in session:
+        logger.warning("⚠️ Usuario no autenticado, redirigiendo")
         return redirect(url_for('home'))
     
+    # Validar que guild_id no esté vacío
+    if not guild_id or guild_id == '':
+        logger.error("❌ guild_id vacío en la URL")
+        return "Error: ID de servidor no válido", 400
+    
     guild_name = request.args.get('name', 'Servidor')
+    logger.info(f"📌 Nombre del servidor: {guild_name}")
+    
+    # Pasar los valores al template
     return render_template('guild_config.html', 
                          guild_id=guild_id,
                          guild_name=guild_name)
@@ -146,6 +159,7 @@ def login_page(guild_id):
 
 def run():
     port = int(os.environ.get("PORT", 10000))
+    logger.info(f"🌐 Servidor web escuchando en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
 
 def keep_alive():
@@ -155,5 +169,5 @@ def keep_alive():
         logger.info("✅ Servidor web iniciado")
         return thread
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error iniciando servidor: {e}")
         return None
