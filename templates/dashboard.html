@@ -203,7 +203,17 @@
             text-decoration: underline;
         }
 
-        /* Responsive */
+        /* Debug info */
+        .debug-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #b9bbbe;
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .guilds-grid {
                 grid-template-columns: 1fr;
@@ -253,12 +263,14 @@
                         </div>
                         
                         <div class="guild-status">
-                            ✅ Tienes permisos de administrador
+                            ✅ Tienes permisos de administrador<br>
+                            <small style="color: #5865F2;">ID: {{ guild.id }}</small>
                         </div>
                         
                         <!-- IMPORTANTE: El guild.id se pasa correctamente -->
                         <a href="/guild/{{ guild.id }}?name={{ guild.name | urlencode }}" 
-                           class="btn-config">
+                           class="btn-config"
+                           onclick="console.log('ID enviado: {{ guild.id }}')">
                             ⚙️ Configurar credenciales
                         </a>
                     </div>
@@ -283,16 +295,43 @@
                 🔗 Hacer clic aquí para invitar
             </a>
         </div>
+
+        <!-- Debug info: muestra los datos que llegan -->
+        <div class="debug-info" id="debugInfo">
+            <strong>Información de depuración:</strong><br>
+            Usuario: {{ user.username if user else 'No autenticado' }}<br>
+            Servidores encontrados: {{ guilds|length if guilds else 0 }}<br>
+            {% if guilds %}
+                {% for guild in guilds %}
+                    - {{ guild.name }} (ID: {{ guild.id }})<br>
+                {% endfor %}
+            {% endif %}
+        </div>
     </div>
 
     <script>
-        // Pequeño script para debugging (opcional)
-        document.querySelectorAll('.btn-config').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                const href = this.getAttribute('href');
-                console.log('🔗 Navegando a:', href);
-            });
+        // Mostrar información de depuración en consola
+        console.log('📊 Dashboard cargado');
+        console.log('Usuario:', {{ user.username|tojson if user else 'null' }});
+        
+        {% if guilds %}
+            console.log('📋 Servidores:');
+            {% for guild in guilds %}
+                console.log('   - {{ guild.name }} (ID: {{ guild.id }})');
+            {% endfor %}
+        {% else %}
+            console.log('❌ No hay servidores');
+        {% endif %}
+
+        // Verificar que los enlaces tengan el ID
+        document.querySelectorAll('.btn-config').forEach((btn, index) => {
+            console.log(`🔗 Botón ${index + 1} - URL:`, btn.href);
         });
+
+        // Opcional: mostrar debug info si hay problemas
+        if ({{ guilds|length if guilds else 0 }} === 0) {
+            document.getElementById('debugInfo').style.display = 'block';
+        }
     </script>
 </body>
 </html>
