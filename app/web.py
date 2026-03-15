@@ -15,7 +15,6 @@ HEADERS = {
 }
 
 def verificar_credenciales_naerzone(usuario, password):
-    """Verifica si las credenciales son válidas en Naerzone"""
     try:
         session = requests.Session()
         session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
@@ -26,7 +25,6 @@ def verificar_credenciales_naerzone(usuario, password):
         return False
 
 def init_api_routes(app):
-    """Inicializa las rutas de API en la app Flask"""
     
     @app.route('/api/verificar-credenciales', methods=['POST'])
     def api_verificar():
@@ -46,6 +44,9 @@ def init_api_routes(app):
         usuario = data.get('usuario')
         password = data.get('password')
         
+        if not guild_id:
+            return jsonify({'exito': False, 'error': 'Falta guild_id'})
+        
         if not verificar_credenciales_naerzone(usuario, password):
             return jsonify({'exito': False, 'error': 'Credenciales inválidas'})
         
@@ -55,6 +56,7 @@ def init_api_routes(app):
             db.guardar_credenciales(guild_id, guild_name, usuario, password)
         )
         loop.close()
+        
         return jsonify({'exito': resultado})
     
     @app.route('/api/guardar-config', methods=['POST'])
@@ -71,4 +73,5 @@ def init_api_routes(app):
             db.guardar_config(guild_id, canal_id, hora, minuto)
         )
         loop.close()
+        
         return jsonify({'exito': resultado})
