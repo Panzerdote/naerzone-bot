@@ -25,9 +25,6 @@ def verificar_credenciales_naerzone(usuario, password):
     except:
         return False
 
-# ==================== RUTAS DE API ====================
-# Estas funciones se importarán desde keep_alive.py
-
 def init_api_routes(app):
     """Inicializa las rutas de API en la app Flask"""
     
@@ -39,14 +36,13 @@ def init_api_routes(app):
         
         if verificar_credenciales_naerzone(usuario, password):
             return jsonify({'valido': True})
-        else:
-            return jsonify({'valido': False, 'error': 'Credenciales inválidas'})
+        return jsonify({'valido': False, 'error': 'Credenciales inválidas'})
     
     @app.route('/api/guardar-credenciales', methods=['POST'])
     def api_guardar():
         data = request.json
         guild_id = data.get('guild_id')
-        guild_name = data.get('guild_name', 'Servidor Desconocido')
+        guild_name = data.get('guild_name', 'Servidor')
         usuario = data.get('usuario')
         password = data.get('password')
         
@@ -59,7 +55,6 @@ def init_api_routes(app):
             db.guardar_credenciales(guild_id, guild_name, usuario, password)
         )
         loop.close()
-        
         return jsonify({'exito': resultado})
     
     @app.route('/api/guardar-config', methods=['POST'])
@@ -76,5 +71,4 @@ def init_api_routes(app):
             db.guardar_config(guild_id, canal_id, hora, minuto)
         )
         loop.close()
-        
         return jsonify({'exito': resultado})
