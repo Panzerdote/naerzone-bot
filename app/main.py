@@ -1,4 +1,5 @@
 # app/main.py
+from keep_alive import keep_alive
 import os
 import sys
 import types
