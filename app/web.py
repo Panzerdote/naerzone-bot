@@ -33,28 +33,23 @@ def verificar_credenciales_naerzone(usuario, password):
         return False
 
 async def obtener_canales_discord(guild_id):
-    """Obtiene los canales de texto de un servidor de Discord usando el token del bot"""
+    """Obtiene los canales de texto de un servidor de Discord usando fetch_channels()"""
     try:
         if not BOT_TOKEN:
-            logger.error("❌ No hay token de bot configurado en variables de entorno")
+            logger.error("❌ No hay token de bot configurado")
             return []
         
         logger.info(f"🔍 Obteniendo canales para guild: {guild_id}")
         
+        # Configurar intents
         intents = discord.Intents.default()
         intents.guilds = True
         client = discord.Client(intents=intents)
         
         await client.login(BOT_TOKEN)
         
-        # Intentar obtener el servidor desde caché primero
-        guild = client.get_guild(int(guild_id))
-        
-        # Si no está en caché, usar fetch_guild con with_counts para forzar carga de canales
-        if not guild:
-            logger.info(f"⚠️ {guild_id} no está en caché, usando fetch_guild")
-            guild = await client.fetch_guild(int(guild_id), with_counts=True)
-        
+        # Obtener el servidor
+        guild = await client.fetch_guild(int(guild_id))
         if not guild:
             logger.error(f"❌ No se pudo obtener el gremio {guild_id}")
             await client.close()
@@ -62,10 +57,14 @@ async def obtener_canales_discord(guild_id):
         
         logger.info(f"✅ Gremio obtenido: {guild.name} (ID: {guild.id})")
         
-        # Listar todos los canales (para depuración)
-        logger.info(f"📋 Canales en el gremio (todos los tipos):")
+        # 🔥 SOLUCIÓN: Usar fetch_channels() en lugar de acceder a guild.channels
+        logger.info(f"📡 Solicitando canales vía fetch_channels()...")
+        canales = await guild.fetch_channels()
+        
+        logger.info(f"📋 Canales encontrados: {len(canales)}")
+        
         canales_texto = []
-        for canal in guild.channels:
+        for canal in canales:
             logger.info(f"   - #{canal.name} (ID: {canal.id}, Tipo: {canal.type})")
             if isinstance(canal, discord.TextChannel):
                 canales_texto.append({
@@ -81,18 +80,17 @@ async def obtener_canales_discord(guild_id):
         else:
             logger.info(f"✅ Total canales de texto: {len(canales_texto)}")
         
-        # Ordenar por posición
         canales_texto.sort(key=lambda x: x['position'])
         return canales_texto
         
-    except discord.LoginFailure:
-        logger.error("❌ Token de Discord inválido. Verifica DISCORD_TOKEN en las variables de entorno.")
-        return []
     except discord.Forbidden:
         logger.error(f"❌ El bot no tiene permisos para ver los canales del servidor {guild_id}")
         return []
     except discord.NotFound:
         logger.error(f"❌ El servidor {guild_id} no existe o el bot no está en él")
+        return []
+    except discord.LoginFailure:
+        logger.error("❌ Token de Discord inválido")
         return []
     except Exception as e:
         logger.error(f"❌ Error general obteniendo canales: {e}")
@@ -104,7 +102,6 @@ def init_api_routes(app):
     
     @app.route('/api/verificar-credenciales', methods=['POST'])
     def api_verificar():
-        """Verifica credenciales de Naerzone"""
         data = request.json
         usuario = data.get('usuario')
         password = data.get('password')
@@ -115,7 +112,6 @@ def init_api_routes(app):
     
     @app.route('/api/guardar-credenciales', methods=['POST'])
     def api_guardar_credenciales():
-        """Guarda credenciales en Supabase"""
         data = request.json
         guild_id = data.get('guild_id')
         guild_name = data.get('guild_name', 'Servidor')
@@ -125,7 +121,6 @@ def init_api_routes(app):
         if not guild_id or not usuario:
             return jsonify({'exito': False, 'error': 'Faltan datos'})
         
-        # Si hay password, verificamos
         if password and not verificar_credenciales_naerzone(usuario, password):
             return jsonify({'exito': False, 'error': 'Credenciales inválidas'})
         
@@ -139,11 +134,9 @@ def init_api_routes(app):
     
     @app.route('/api/guardar-config', methods=['POST'])
     def api_guardar_config():
-        """Guarda configuración del bot"""
         data = request.json
         guild_id = data.get('guild_id')
         canal_id = data.get('canal_id')
-        canal_nombre = data.get('canal_nombre', '')
         hora = data.get('hora', 22)
         minuto = data.get('minuto', 0)
         mensaje = data.get('mensaje_personalizado')
@@ -162,14 +155,13 @@ def init_api_routes(app):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resultado = loop.run_until_complete(
-            db.guardar_config(guild_id, canal_id, canal_nombre, hora, minuto, mensaje)
+            db.guardar_config(guild_id, canal_id, '', hora, minuto, mensaje)
         )
         loop.close()
         return jsonify({'exito': resultado})
     
     @app.route('/api/canales/<guild_id>', methods=['GET'])
     def api_canales(guild_id):
-        """API para obtener canales de un servidor"""
         if not guild_id:
             return jsonify({'error': 'Falta guild_id'}), 400
         
@@ -179,23 +171,14 @@ def init_api_routes(app):
         loop.close()
         
         if not canales:
-            logger.warning(f"⚠️ No se obtuvieron canales para {guild_id}. Verifica que el bot esté en el servidor y tenga permisos.")
-            return jsonify({'canales': [], 'advertencia': 'No se pudieron cargar los canales. Asegúrate de que el bot esté en el servidor y tenga permisos.'})
+            return jsonify({'canales': [], 'advertencia': 'No se pudieron cargar los canales. Verifica permisos.'})
         
         return jsonify({'canales': canales})
     
     @app.route('/api/test-canales/<guild_id>', methods=['GET'])
     def api_test_canales(guild_id):
-        """Endpoint de prueba para verificar la conexión con Discord"""
-        if not BOT_TOKEN:
-            return jsonify({
-                'error': 'No hay DISCORD_TOKEN configurado',
-                'token_presente': False
-            }), 400
-        
         return jsonify({
-            'mensaje': 'Endpoint funcionando',
             'guild_id': guild_id,
-            'token_presente': True,
+            'token_presente': bool(BOT_TOKEN),
             'token_preview': BOT_TOKEN[:10] + '...' if BOT_TOKEN else None
         })
