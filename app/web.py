@@ -21,7 +21,6 @@ BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 # ==================== FUNCIONES AUXILIARES ====================
 
 def verificar_credenciales_naerzone(usuario, password):
-    """Verifica credenciales con Naerzone"""
     try:
         session = requests.Session()
         session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
@@ -33,7 +32,6 @@ def verificar_credenciales_naerzone(usuario, password):
         return False
 
 async def obtener_canales_discord(guild_id):
-    """Obtiene los canales de texto de un servidor de Discord usando fetch_channels()"""
     try:
         if not BOT_TOKEN:
             logger.error("❌ No hay token de bot configurado")
@@ -41,14 +39,12 @@ async def obtener_canales_discord(guild_id):
         
         logger.info(f"🔍 Obteniendo canales para guild: {guild_id}")
         
-        # Configurar intents
         intents = discord.Intents.default()
         intents.guilds = True
         client = discord.Client(intents=intents)
         
         await client.login(BOT_TOKEN)
         
-        # Obtener el servidor
         guild = await client.fetch_guild(int(guild_id))
         if not guild:
             logger.error(f"❌ No se pudo obtener el gremio {guild_id}")
@@ -57,7 +53,7 @@ async def obtener_canales_discord(guild_id):
         
         logger.info(f"✅ Gremio obtenido: {guild.name} (ID: {guild.id})")
         
-        # 🔥 SOLUCIÓN: Usar fetch_channels() en lugar de acceder a guild.channels
+        # Usar fetch_channels() para obtener canales
         logger.info(f"📡 Solicitando canales vía fetch_channels()...")
         canales = await guild.fetch_channels()
         
@@ -95,8 +91,6 @@ async def obtener_canales_discord(guild_id):
     except Exception as e:
         logger.error(f"❌ Error general obteniendo canales: {e}")
         return []
-
-# ==================== INICIALIZACIÓN DE RUTAS API ====================
 
 def init_api_routes(app):
     
@@ -137,6 +131,7 @@ def init_api_routes(app):
         data = request.json
         guild_id = data.get('guild_id')
         canal_id = data.get('canal_id')
+        canal_nombre = data.get('canal_nombre', '')
         hora = data.get('hora', 22)
         minuto = data.get('minuto', 0)
         mensaje = data.get('mensaje_personalizado')
@@ -155,8 +150,18 @@ def init_api_routes(app):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resultado = loop.run_until_complete(
-            db.guardar_config(guild_id, canal_id, '', hora, minuto, mensaje)
+            db.guardar_config(guild_id, canal_id, canal_nombre, hora, minuto, mensaje)
         )
+        
+        # 🔥 NUEVO: Reprogramar el servidor si se guardó correctamente
+        if resultado:
+            try:
+                from keep_alive import reprogramar_servidor
+                loop.run_until_complete(reprogramar_servidor(guild_id))
+                logger.info(f"🔄 Servidor {guild_id} reprogramado tras guardar configuración")
+            except Exception as e:
+                logger.error(f"❌ Error reprogramando: {e}")
+        
         loop.close()
         return jsonify({'exito': resultado})
     
