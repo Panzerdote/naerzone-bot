@@ -262,7 +262,7 @@ class NaerzoneBot(commands.Bot):
         logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
         await self.db.eliminar_servidor_bot(guild.id)
     
-    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA =====
+    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA (CORREGIDA) =====
     async def reprogramar_ahora(self, guild_id):
         """Reprograma el envío para un servidor INMEDIATAMENTE"""
         logger.info(f"⚡ REPROGRAMACIÓN INMEDIATA para servidor {guild_id}")
@@ -279,7 +279,8 @@ class NaerzoneBot(commands.Bot):
                 tareas_canceladas += 1
         
         for task_id in tareas_a_eliminar:
-            del self.tareas_programadas[task_id]
+            if task_id in self.tareas_programadas:
+                del self.tareas_programadas[task_id]
         
         # Obtener la nueva configuración
         config = await self.db.obtener_config(guild_id)
@@ -297,20 +298,30 @@ class NaerzoneBot(commands.Bot):
             second=0, microsecond=0
         )
         
+        # Si la hora ya pasó hoy, programar para mañana
         if ahora >= proximo:
             proximo += timedelta(days=1)
         
         espera = (proximo - ahora).total_seconds()
-        logger.info(f"   Nueva hora programada: {proximo.strftime('%H:%M')} (en {espera/3600:.1f}h)")
+        
+        # 🔥 CORRECCIÓN: Si la espera es muy pequeña, darle al menos 2 segundos
+        if espera < 2:
+            espera = 2
+            logger.info(f"   ⚠️ Espera muy corta, ajustando a 2 segundos")
+        
+        logger.info(f"   Nueva hora programada: {proximo.strftime('%H:%M')} (en {espera:.1f} segundos)")
         
         # Crear NUEVA tarea
-        task_id = f"{guild_id}_{proximo.strftime('%Y%m%d')}"
+        task_id = f"{guild_id}_{proximo.strftime('%Y%m%d_%H%M')}"
         
         async def enviar_con_espera(gid, cid, creds, config, delay, tid):
+            logger.info(f"⏰ Tarea {tid} iniciada, esperando {delay} segundos")
             await asyncio.sleep(delay)
+            logger.info(f"🚀 Ejecutando envío para {gid}")
             await self.enviar_promocion_servidor(gid, cid, creds, config)
             if tid in self.tareas_programadas:
                 del self.tareas_programadas[tid]
+            logger.info(f"✅ Tarea {tid} completada")
         
         self.tareas_programadas[task_id] = asyncio.create_task(
             enviar_con_espera(
@@ -323,29 +334,39 @@ class NaerzoneBot(commands.Bot):
             )
         )
         
-        logger.info(f"✅ Servidor {guild_id} REPROGRAMADO INMEDIATAMENTE para las {proximo.strftime('%H:%M')}")
+        logger.info(f"✅ Servidor {guild_id} REPROGRAMADO para las {proximo.strftime('%H:%M')} (en {espera:.1f}s)")
         return True
-    # ==============================================
+    # ===========================================================
     
     async def enviar_promocion_servidor(self, guild_id, canal_id, credenciales, config):
         try:
             guild = self.get_guild(int(guild_id))
             if not guild:
+                logger.error(f"❌ No se encontró el servidor {guild_id}")
                 return
+            
             canal = guild.get_channel(int(canal_id))
             if not canal:
+                logger.error(f"❌ No se encontró el canal {canal_id} en {guild_id}")
                 return
+            
             if not canal.permissions_for(guild.me).send_messages:
+                logger.error(f"❌ No tengo permisos en {canal.name}")
                 return
+            
             if await self.db.ya_se_envio_hoy(guild_id):
+                logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
                 return
+            
             session, success = login_web(credenciales['usuario'], credenciales['password'])
             if not success:
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone. Verifica tus credenciales.")
                 return
+            
             promo = extraer_promocion(session)
             if not promo:
                 return
+            
             mensaje = config.get('mensaje_personalizado') or "@everyone atentos que tenemos promo, joder."
             await canal.send(mensaje)
             await canal.send(embed=promo.formatear_mensaje(), view=promo.crear_botones())
@@ -356,9 +377,13 @@ class NaerzoneBot(commands.Bot):
     
     async def programar_envios(self):
         await self.wait_until_ready()
+        logger.info("📅 Iniciando programación de envíos...")
+        
         while not self.is_closed():
             try:
                 servidores = await self.db.obtener_servidores_activos()
+                logger.info(f"📊 Servidores activos encontrados: {len(servidores)}")
+                
                 for servidor in servidores:
                     try:
                         ahora = datetime.now(chile_tz)
@@ -369,15 +394,20 @@ class NaerzoneBot(commands.Bot):
                         )
                         if ahora >= proximo:
                             proximo += timedelta(days=1)
+                        
                         espera = (proximo - ahora).total_seconds()
+                        logger.info(f"   {servidor.get('guild_name', 'Desconocido')}: próximo envío en {espera/3600:.1f}h")
+                        
                         if espera < 86400 and espera > 0:
                             task_id = f"{servidor['guild_id']}_{proximo.strftime('%Y%m%d')}"
+                            
                             if task_id not in self.tareas_programadas:
                                 async def enviar_con_espera(gid, cid, creds, config, delay, tid):
                                     await asyncio.sleep(delay)
                                     await self.enviar_promocion_servidor(gid, cid, creds, config)
                                     if tid in self.tareas_programadas:
                                         del self.tareas_programadas[tid]
+                                
                                 self.tareas_programadas[task_id] = asyncio.create_task(
                                     enviar_con_espera(
                                         servidor['guild_id'],
@@ -388,8 +418,10 @@ class NaerzoneBot(commands.Bot):
                                         task_id
                                     )
                                 )
+                                logger.info(f"   ✅ Tarea programada: {task_id}")
                     except Exception as e:
-                        logger.error(f"Error programando: {e}")
+                        logger.error(f"Error programando servidor {servidor.get('guild_id')}: {e}")
+                
                 await asyncio.sleep(3600)
             except Exception as e:
                 logger.error(f"Error general: {e}")
