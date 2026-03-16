@@ -69,7 +69,7 @@ def obtener_datos_servidor(guild_id):
         logger.error(f"Error obteniendo datos: {e}")
         return None, None
 
-# ==================== FUNCIÓN DE REPROGRAMACIÓN ====================
+# ==================== FUNCIÓN DE REPROGRAMACIÓN (MEJORADA Y SEGURA) ====================
 async def reprogramar_servidor(guild_id):
     """Fuerza la reprogramación de un servidor específico después de guardar configuración"""
     global bot
@@ -79,25 +79,33 @@ async def reprogramar_servidor(guild_id):
     
     try:
         logger.info(f"🔄 Intentando reprogramar servidor {guild_id}")
-        logger.info(f"   Tareas actuales: {list(bot.tareas_programadas.keys()) if bot.tareas_programadas else 'Vacío'}")
+        
+        # Verificar que el bot tenga el atributo tareas_programadas
+        if not hasattr(bot, 'tareas_programadas'):
+            logger.warning("⚠️ El bot no tiene el atributo tareas_programadas")
+            return False
         
         tareas_canceladas = 0
         tareas_a_eliminar = []
         
-        for task_id, task in bot.tareas_programadas.items():
-            if str(guild_id) in task_id:
-                logger.info(f"   ✅ Cancelando tarea: {task_id}")
-                task.cancel()
-                tareas_a_eliminar.append(task_id)
-                tareas_canceladas += 1
+        # Crear una copia de las keys para evitar modificar el diccionario mientras se itera
+        task_ids = list(bot.tareas_programadas.keys())
         
+        for task_id in task_ids:
+            if str(guild_id) in str(task_id):
+                logger.info(f"   ✅ Cancelando tarea: {task_id}")
+                task = bot.tareas_programadas.get(task_id)
+                if task:
+                    task.cancel()
+                    tareas_a_eliminar.append(task_id)
+                    tareas_canceladas += 1
+        
+        # Eliminar las tareas canceladas
         for task_id in tareas_a_eliminar:
             if task_id in bot.tareas_programadas:
                 del bot.tareas_programadas[task_id]
         
         logger.info(f"✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s)")
-        
-        # La próxima vez que el loop de programación corra (cada hora), creará una nueva tarea
         return True
     except Exception as e:
         logger.error(f"❌ Error reprogramando servidor {guild_id}: {e}")
