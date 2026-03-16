@@ -14,6 +14,20 @@ import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View
 
+# ==================== CONFIGURACIÓN DE LOGGING ====================
+logging.basicConfig(level=logging.INFO)
+
+# Silenciar librerías ruidosas
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("discord.client").setLevel(logging.WARNING)
+logging.getLogger("discord.gateway").setLevel(logging.WARNING)
+logging.getLogger("werkzeug").setLevel(logging.ERROR)
+logging.getLogger("waitress").setLevel(logging.ERROR)
+
+logger = logging.getLogger(__name__)
+# ===================================================================
+
 # ==================== PATCH AUDIOOP ====================
 os.environ["DISCORD_NO_VOICE"] = "true"
 os.environ["DISCORD_VOICE_DISABLED"] = "true"
