@@ -235,9 +235,31 @@ class NaerzoneBot(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(ConfigCog(self))
     
+    # ===== NUEVA FUNCIÓN PARA ROTAR ESTADO =====
+    async def rotar_estado(self):
+        """Cambia el estado del bot cada 5 minutos"""
+        mensajes = [
+            "🛒 Ofertas diarias",
+            "⚙️ Configura en la web",
+            "🎁 Promo del día",
+        ]
+        import itertools
+        ciclo = itertools.cycle(mensajes)
+        
+        while not self.is_closed():
+            try:
+                mensaje = next(ciclo)
+                await self.change_presence(activity=discord.Game(name=mensaje))
+                await asyncio.sleep(300)  # 5 minutos
+            except Exception as e:
+                logger.error(f"Error rotando estado: {e}")
+                await asyncio.sleep(60)
+    # ===========================================
+    
     async def on_ready(self):
         logger.info(f'🤖 Bot {self.user} conectado a Discord!')
         await self.change_presence(activity=discord.Game(name="n!comandos | Ofertas Naerzone"))
+        self.loop.create_task(self.rotar_estado())  # <--- NUEVA LÍNEA
         self.loop.create_task(self.programar_envios())
     
     async def on_guild_join(self, guild):
