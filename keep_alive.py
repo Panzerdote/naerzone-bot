@@ -10,12 +10,14 @@ from requests_oauthlib import OAuth2Session
 from datetime import datetime
 import pytz
 import asyncio
-from waitress import serve  # <--- NUEVO: servidor production
+from waitress import serve
 
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
+# Configurar logging con hora Chile
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Forzar formato de hora Chile en logs
+logging.Formatter.converter = lambda *args: datetime.now(pytz.timezone('America/Santiago')).timetuple()
 
 DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
 DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET', '')
@@ -34,6 +36,7 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
+# Referencia al bot
 bot = None
 
 logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
@@ -52,20 +55,26 @@ def obtener_datos_servidor(guild_id):
         logger.error(f"❌ Error obteniendo datos: {e}")
         return None, None
 
+# ==================== FUNCIÓN DE REPROGRAMACIÓN CON LOGS EN VIVO ====================
 async def reprogramar_servidor(guild_id):
+    """Fuerza la reprogramación de un servidor específico después de guardar configuración"""
     global bot
+    logger.info(f"🔥🔥🔥 REPROGRAMANDO SERVIDOR {guild_id} - {datetime.now(pytz.timezone('America/Santiago')).strftime('%H:%M:%S')}")
+    
     if not bot:
-        logger.warning("⚠️ Bot no disponible para reprogramar")
+        logger.error(f"❌❌❌ ERROR: bot es None - no se puede reprogramar {guild_id}")
         return False
     
     try:
         logger.info(f"🔄 Intentando reprogramar servidor {guild_id}")
+        logger.info(f"   Tareas actuales: {list(bot.tareas_programadas.keys())}")
+        
         tareas_canceladas = 0
         tareas_a_eliminar = []
         
         for task_id, task in bot.tareas_programadas.items():
             if str(guild_id) in task_id:
-                logger.info(f"   Cancelando tarea: {task_id}")
+                logger.info(f"   ✅ Cancelando tarea: {task_id}")
                 task.cancel()
                 tareas_a_eliminar.append(task_id)
                 tareas_canceladas += 1
@@ -73,12 +82,15 @@ async def reprogramar_servidor(guild_id):
         for task_id in tareas_a_eliminar:
             del bot.tareas_programadas[task_id]
         
-        logger.info(f"✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s)")
+        logger.info(f"✅✅✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s) a las {datetime.now(pytz.timezone('America/Santiago')).strftime('%H:%M:%S')}")
+        
+        # La próxima vez que el loop de programación corra (cada hora), creará una nueva tarea
         return True
     except Exception as e:
-        logger.error(f"❌ Error reprogramando servidor {guild_id}: {e}")
+        logger.error(f"❌❌❌ Error reprogramando servidor {guild_id}: {e}")
         return False
 
+# ==================== RUTAS ====================
 @app.route('/health')
 def health():
     return jsonify({"status": "healthy", "timestamp": time.time()}), 200
@@ -240,15 +252,15 @@ def login_page(guild_id):
 
 def run():
     port = int(os.environ.get("PORT", 10000))
-    logger.info(f"🌐 Servidor web production iniciado en puerto {port} con waitress")
-    # Usar waitress en lugar de app.run()
+    logger.info(f"🌐 Servidor web production iniciado en puerto {port}")
     serve(app, host='0.0.0.0', port=port, threads=4)
 
 def keep_alive(bot_instance=None):
     global bot
     if bot_instance:
         bot = bot_instance
-        logger.info("✅ Referencia al bot guardada en keep_alive")
+        logger.info("✅✅✅ Referencia al bot guardada en keep_alive")
+        logger.info(f"   Bot.tareas_programadas: {list(bot.tareas_programadas.keys()) if bot.tareas_programadas else 'Vacío'}")
     
     try:
         thread = Thread(target=run, daemon=True)
