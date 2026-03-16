@@ -211,6 +211,25 @@
             background: rgba(88, 101, 242, 0.1);
         }
 
+        /* NUEVO BOTÓN ROJO */
+        .btn-delete {
+            flex: 1;
+            padding: 10px;
+            background: #ed4245;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .btn-delete:hover {
+            background: #c03538;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px;
@@ -318,14 +337,18 @@
                             <small>ID: {{ guild.id }}</small>
                         </div>
                         
+                        <!-- SECCIÓN DE BOTONES MODIFICADA CON EL NUEVO BOTÓN ROJO -->
                         <div class="guild-actions">
                             {% if guild.bot_esta %}
                                 <a href="/guild/{{ guild.id }}?name={{ guild.name | urlencode }}" 
                                    class="btn-config">
                                     ⚙️ Configurar
                                 </a>
+                                <!-- NUEVO BOTÓN ROJO -->
+                                <button class="btn-delete" onclick="confirmarEliminacion('{{ guild.id }}', '{{ guild.name|escapejs }}')">
+                                    🗑️ Eliminar bot
+                                </button>
                             {% else %}
-                                <!-- MODIFICADO: El enlace ahora abre en ventana nueva y recarga al cerrar -->
                                 <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot&guild_id={{ guild.id }}" 
                                    class="btn-invite" 
                                    target="_blank"
@@ -359,23 +382,122 @@
         </div>
     </div>
 
-    <!-- Script para recargar al cerrar la ventana de invitación -->
+    <!-- MODAL DE CONFIRMACIÓN -->
+    <div id="modalEliminar" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>🗑️ ¿Eliminar el bot?</h3>
+            <p id="modalTexto">¿Estás seguro de que quieres eliminar el bot del servidor <strong id="nombreServidor"></strong>?</p>
+            <p style="color: #ed4245; font-size: 0.9rem; margin-top: 10px;">
+                ⚠️ Esta acción:
+            </p>
+            <ul style="color: #b9bbbe; margin-left: 20px; margin-bottom: 20px;">
+                <li>Expulsará al bot del servidor</li>
+                <li>Eliminará todas las credenciales guardadas</li>
+                <li>Borrará la configuración del bot</li>
+                <li>No se puede deshacer</li>
+            </ul>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-config" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-delete" id="confirmarEliminar" style="flex: 1;">Sí, eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: #2c2f33;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 90%;
+        border: 1px solid #40444b;
+    }
+
+    .modal-content h3 {
+        color: #ed4245;
+        margin-bottom: 15px;
+    }
+    </style>
+
+    <!-- SCRIPT PARA INVITACIÓN Y ELIMINACIÓN -->
     <script>
+    // Función para invitar y recargar (existente)
     function invitarYRecargar(event, url) {
         event.preventDefault();
-        
-        // Abrir la ventana de invitación
         const ventana = window.open(url, '_blank', 'width=800,height=600');
-        
-        // Verificar cada segundo si la ventana se cerró
         const intervalo = setInterval(() => {
             if (ventana.closed) {
                 clearInterval(intervalo);
-                // Recargar el dashboard para actualizar el estado
                 location.reload();
             }
         }, 1000);
     }
+
+    // Variables para eliminación
+    let guildIdEliminar = null;
+
+    function confirmarEliminacion(guildId, guildName) {
+        guildIdEliminar = guildId;
+        document.getElementById('nombreServidor').textContent = guildName;
+        document.getElementById('modalEliminar').style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalEliminar').style.display = 'none';
+        guildIdEliminar = null;
+    }
+
+    document.getElementById('confirmarEliminar').addEventListener('click', async function() {
+        if (!guildIdEliminar) return;
+        
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Eliminando...';
+        
+        try {
+            const response = await fetch(`/api/eliminar-servidor/${guildIdEliminar}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('✅ Bot eliminado correctamente');
+                location.reload();
+            } else {
+                alert(`❌ Error: ${data.error || 'Error desconocido'}`);
+                cerrarModal();
+            }
+        } catch (error) {
+            alert(`❌ Error de conexión: ${error.message}`);
+            cerrarModal();
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Sí, eliminar';
+        }
+    });
+
+    // Cerrar modal al hacer clic fuera
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('modalEliminar');
+        if (event.target === modal) {
+            cerrarModal();
+        }
+    });
     </script>
 </body>
 </html>
