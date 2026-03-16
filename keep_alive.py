@@ -10,30 +10,24 @@ import pytz
 import asyncio
 from waitress import serve
 
-# ==================== PATCH PARA AUDIOOP (Python 3.13+) ====================
+# ==================== PATCH PARA AUDIOOP ====================
 import sys
 import types
-
-# Crear un mock de audioop si no existe
 if 'audioop' not in sys.modules:
     audioop_mock = types.ModuleType('audioop')
-    
     def dummy_func(*args, **kwargs):
         if args and len(args) > 0 and isinstance(args[0], bytes):
             return args[0]
         return b''
-    
-    # Lista de todas las funciones que audioop solía tener
     for func_name in ['add', 'mul', 'lin2lin', 'ratecv', 'tomono', 'tostereo',
                       'findfactor', 'findfit', 'findmax', 'getsample',
                       'lin2adpcm', 'lin2alaw', 'lin2ulaw', 'adpcm2lin',
                       'alaw2lin', 'ulaw2lin', 'reverse', 'cross', 'bias',
                       'downsample', 'find']:
         setattr(audioop_mock, func_name, dummy_func)
-    
     sys.modules['audioop'] = audioop_mock
-    print("✅ Parche de audioop aplicado correctamente en keep_alive")
-# ============================================================================
+    print("✅ Parche de audioop aplicado correctamente")
+# ============================================================
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -59,6 +53,7 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
+# Referencia al bot (se asigna desde main.py)
 bot = None
 
 def obtener_datos_servidor(guild_id):
@@ -73,6 +68,41 @@ def obtener_datos_servidor(guild_id):
     except Exception as e:
         logger.error(f"Error obteniendo datos: {e}")
         return None, None
+
+# ==================== FUNCIÓN DE REPROGRAMACIÓN ====================
+async def reprogramar_servidor(guild_id):
+    """Fuerza la reprogramación de un servidor específico después de guardar configuración"""
+    global bot
+    if not bot:
+        logger.warning("⚠️ Bot no disponible para reprogramar")
+        return False
+    
+    try:
+        logger.info(f"🔄 Intentando reprogramar servidor {guild_id}")
+        logger.info(f"   Tareas actuales: {list(bot.tareas_programadas.keys()) if bot.tareas_programadas else 'Vacío'}")
+        
+        tareas_canceladas = 0
+        tareas_a_eliminar = []
+        
+        for task_id, task in bot.tareas_programadas.items():
+            if str(guild_id) in task_id:
+                logger.info(f"   ✅ Cancelando tarea: {task_id}")
+                task.cancel()
+                tareas_a_eliminar.append(task_id)
+                tareas_canceladas += 1
+        
+        for task_id in tareas_a_eliminar:
+            if task_id in bot.tareas_programadas:
+                del bot.tareas_programadas[task_id]
+        
+        logger.info(f"✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s)")
+        
+        # La próxima vez que el loop de programación corra (cada hora), creará una nueva tarea
+        return True
+    except Exception as e:
+        logger.error(f"❌ Error reprogramando servidor {guild_id}: {e}")
+        return False
+# ====================================================================
 
 @app.route('/health')
 def health():
@@ -194,6 +224,7 @@ def keep_alive(bot_instance=None):
     global bot
     if bot_instance:
         bot = bot_instance
+        logger.info("✅ Referencia al bot guardada en keep_alive")
     thread = Thread(target=run, daemon=True)
     thread.start()
     logger.info("✅ Servidor web iniciado")
