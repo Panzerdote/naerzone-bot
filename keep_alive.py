@@ -41,7 +41,7 @@ logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
 
 # ==================== FUNCIÓN AUXILIAR PARA OBTENER DATOS ====================
 def obtener_datos_servidor(guild_id):
-    """Obtiene credenciales y configuración de un servidor de forma síncrona"""
+    """Obtiene credenciales y configuración de un servidor"""
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -60,7 +60,7 @@ def obtener_datos_servidor(guild_id):
         
         return credenciales, config
     except Exception as e:
-        logger.error(f"Error obteniendo datos: {e}")
+        logger.error(f"❌ Error obteniendo datos: {e}")
         return None, None
 
 # ==================== HEALTH CHECKS ====================
@@ -104,7 +104,7 @@ def callback():
         
         return redirect(url_for('dashboard'))
     except Exception as e:
-        logger.error(f"Error en callback: {e}")
+        logger.error(f"❌ Error en callback: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/logout')
@@ -131,7 +131,7 @@ def dashboard():
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
-                # Verificar si el bot está en este servidor (tiene configuración)
+                # Verificar si el servidor tiene configuración (para saber si el bot está)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
@@ -150,7 +150,7 @@ def dashboard():
                              user=session['user'],
                              guilds=admin_guilds)
     except Exception as e:
-        logger.error(f"Error en dashboard: {e}")
+        logger.error(f"❌ Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
 # ==================== CONFIGURACIÓN DE SERVIDOR ====================
@@ -169,7 +169,7 @@ def guild_config(guild_id):
     
     guild_name = request.args.get('name', 'Servidor')
     
-    # Obtener credenciales y configuración de Supabase
+    # Obtener credenciales y configuración
     credenciales, config = obtener_datos_servidor(guild_id)
     
     logger.info(f"📌 Renderizando template para {guild_name} ({guild_id})")
@@ -183,15 +183,15 @@ def guild_config(guild_id):
 # ==================== FILTROS PARA JINJA2 ====================
 @app.template_filter('strftime')
 def jinja_strftime(date, format):
-    """Filtro para formatear fechas en templates"""
+    """Filtro para formatear fechas"""
     return date.strftime(format)
 
 # ==================== CONTEXTO PARA TEMPLATES ====================
 @app.context_processor
 def utility_processor():
-    """Añade funciones útiles a todos los templates"""
+    """Añade funciones útiles a templates"""
     def now():
-        """Devuelve la fecha/hora actual"""
+        """Devuelve fecha/hora actual en Chile"""
         return datetime.now(pytz.timezone('America/Santiago'))
     return dict(now=now)
 
@@ -215,7 +215,7 @@ def home():
         user = session.get('user')
         return render_template('index.html', user=user)
     except Exception as e:
-        logger.error(f"Error en home: {e}")
+        logger.error(f"❌ Error en home: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/login/<guild_id>')
@@ -237,5 +237,5 @@ def keep_alive():
         logger.info("✅ Servidor web iniciado")
         return thread
     except Exception as e:
-        logger.error(f"Error iniciando servidor: {e}")
+        logger.error(f"❌ Error iniciando servidor: {e}")
         return None
