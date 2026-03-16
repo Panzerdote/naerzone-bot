@@ -14,7 +14,6 @@ import discord
 from discord.ext import commands, tasks
 from discord.ui import Button, View
 
-# Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -236,7 +235,11 @@ class NaerzoneBot(commands.Bot):
         self.loop.create_task(self.programar_envios())
     
     async def on_guild_join(self, guild):
-        logger.info(f"✅ Bot añadido al servidor: {guild.name}")
+        """Cuando el bot entra a un servidor nuevo"""
+        logger.info(f"✅ Bot añadido al servidor: {guild.name} ({guild.id})")
+        # Registrar en la base de datos que el bot está en este servidor
+        await self.db.agregar_servidor_bot(guild.id, guild.name)
+        
         canal = guild.system_channel or next(
             (ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages), 
             None
@@ -266,43 +269,38 @@ class NaerzoneBot(commands.Bot):
             )
             await canal.send(embed=embed)
     
+    async def on_guild_remove(self, guild):
+        """Cuando el bot es expulsado de un servidor"""
+        logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
+        await self.db.eliminar_servidor_bot(guild.id)
+    
     async def enviar_promocion_servidor(self, guild_id, canal_id, credenciales, config):
-        """Envía la promoción usando las credenciales y configuración del servidor"""
         try:
             guild = self.get_guild(int(guild_id))
             if not guild:
                 return
-            
             canal = guild.get_channel(int(canal_id))
             if not canal:
                 return
-            
             if not canal.permissions_for(guild.me).send_messages:
                 return
-            
             if await self.db.ya_se_envio_hoy(guild_id):
                 logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
                 return
-            
             session, success = login_web(credenciales['usuario'], credenciales['password'])
             if not success:
                 logger.error(f"❌ Login fallido para {guild.name}")
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone con tus credenciales. Por favor, verifica tu usuario y contraseña en la web de configuración.")
                 return
-            
             promo = extraer_promocion(session)
             if not promo:
                 logger.error(f"❌ No se pudo obtener promoción para {guild.name}")
                 return
-            
-            # Usar mensaje personalizado si existe
             mensaje = config.get('mensaje_personalizado') or "@everyone atentos que tenemos promo, joder."
             await canal.send(mensaje)
             await canal.send(embed=promo.formatear_mensaje(), view=promo.crear_botones())
-            
             await self.db.registrar_envio(guild_id)
             logger.info(f"✅ Promo enviada a {guild.name}")
-            
         except Exception as e:
             logger.error(f"Error enviando a {guild_id}: {e}")
     
