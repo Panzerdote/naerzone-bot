@@ -224,7 +224,7 @@ class NaerzoneBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="n!", intents=intents, help_command=None)
         self.db = Database()
-        self.tareas_programadas = {}
+        self.tareas_programadas = {}  # Diccionario para almacenar tareas programadas
     
     async def setup_hook(self):
         await self.add_cog(ConfigCog(self))
@@ -235,9 +235,7 @@ class NaerzoneBot(commands.Bot):
         self.loop.create_task(self.programar_envios())
     
     async def on_guild_join(self, guild):
-        """Cuando el bot entra a un servidor nuevo"""
         logger.info(f"✅ Bot añadido al servidor: {guild.name} ({guild.id})")
-        # Registrar en la base de datos que el bot está en este servidor
         await self.db.agregar_servidor_bot(guild.id, guild.name)
         
         canal = guild.system_channel or next(
@@ -270,7 +268,6 @@ class NaerzoneBot(commands.Bot):
             await canal.send(embed=embed)
     
     async def on_guild_remove(self, guild):
-        """Cuando el bot es expulsado de un servidor"""
         logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
         await self.db.eliminar_servidor_bot(guild.id)
     
@@ -278,11 +275,14 @@ class NaerzoneBot(commands.Bot):
         try:
             guild = self.get_guild(int(guild_id))
             if not guild:
+                logger.error(f"❌ No se encontró el servidor {guild_id}")
                 return
             canal = guild.get_channel(int(canal_id))
             if not canal:
+                logger.error(f"❌ No se encontró el canal {canal_id} en {guild_id}")
                 return
             if not canal.permissions_for(guild.me).send_messages:
+                logger.error(f"❌ No tengo permisos en {canal.name}")
                 return
             if await self.db.ya_se_envio_hoy(guild_id):
                 logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
@@ -306,9 +306,12 @@ class NaerzoneBot(commands.Bot):
     
     async def programar_envios(self):
         await self.wait_until_ready()
+        logger.info("📅 Iniciando programación de envíos...")
         while not self.is_closed():
             try:
                 servidores = await self.db.obtener_servidores_activos()
+                logger.info(f"📊 Servidores activos encontrados: {len(servidores)}")
+                
                 for servidor in servidores:
                     try:
                         ahora = datetime.now(pytz.timezone('America/Santiago'))
@@ -319,15 +322,20 @@ class NaerzoneBot(commands.Bot):
                         )
                         if ahora >= proximo:
                             proximo += timedelta(days=1)
+                        
                         espera = (proximo - ahora).total_seconds()
+                        logger.info(f"   {servidor.get('guild_name', 'Desconocido')}: próximo envío en {espera/3600:.1f}h")
+                        
                         if espera < 86400 and espera > 0:
                             task_id = f"{servidor['guild_id']}_{proximo.strftime('%Y%m%d')}"
+                            
                             if task_id not in self.tareas_programadas:
                                 async def enviar_con_espera(gid, cid, creds, config, delay, tid):
                                     await asyncio.sleep(delay)
                                     await self.enviar_promocion_servidor(gid, cid, creds, config)
                                     if tid in self.tareas_programadas:
                                         del self.tareas_programadas[tid]
+                                
                                 self.tareas_programadas[task_id] = asyncio.create_task(
                                     enviar_con_espera(
                                         servidor['guild_id'],
@@ -338,11 +346,13 @@ class NaerzoneBot(commands.Bot):
                                         task_id
                                     )
                                 )
+                                logger.info(f"   ✅ Tarea programada: {task_id}")
                     except Exception as e:
-                        logger.error(f"Error programando: {e}")
-                await asyncio.sleep(3600)
+                        logger.error(f"Error programando servidor {servidor.get('guild_id')}: {e}")
+                
+                await asyncio.sleep(3600)  # Revisar cada hora
             except Exception as e:
-                logger.error(f"Error general: {e}")
+                logger.error(f"Error general en programación: {e}")
                 await asyncio.sleep(60)
 
 # ==================== COGS ====================
@@ -457,9 +467,14 @@ if __name__ == "__main__":
     if not token:
         logger.error("❌ FALTA DISCORD_TOKEN")
         sys.exit(1)
-    logger.info("🚀 Iniciando servidor web...")
-    keep_alive()
-    logger.info("🤖 Iniciando bot de Discord...")
+    
+    logger.info("🚀 Iniciando bot de Discord...")
     bot = NaerzoneBot()
+    
+    # 🔥 Pasar el bot a keep_alive ANTES de iniciar
+    from keep_alive import keep_alive
+    keep_alive(bot)  # <--- Ahora pasamos el bot como argumento
+    
+    logger.info("🤖 Conectando bot a Discord...")
     bot.run(token)
 # ========================================================
