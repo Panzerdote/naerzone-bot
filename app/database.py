@@ -11,40 +11,50 @@ class Database:
         self.supabase_key = os.environ.get('SUPABASE_KEY')
         
         if not self.supabase_url or not self.supabase_key:
-            logger.error("Faltan SUPABASE_URL o SUPABASE_KEY")
+            logger.error("❌ Faltan SUPABASE_URL o SUPABASE_KEY")
             raise Exception("Supabase no configurado")
         
         self.supabase = create_client(self.supabase_url, self.supabase_key)
         logger.info("✅ Conectado a Supabase")
     
+    # ========== CREDENCIALES ==========
     async def guardar_credenciales(self, guild_id, guild_name, usuario, password):
+        """Guarda o actualiza credenciales"""
         try:
             if not guild_id:
-                logger.error("guild_id vacío")
+                logger.error("❌ guild_id vacío")
                 return False
+            
+            # Verificar si ya existe
+            existing = self.supabase.table('credenciales').select('*').eq('guild_id', str(guild_id)).execute()
             
             data = {
                 'guild_id': str(guild_id),
                 'guild_name': guild_name,
                 'usuario': usuario,
-                'password': password
             }
             
-            existing = self.supabase.table('credenciales').select('*').eq('guild_id', str(guild_id)).execute()
+            # Solo actualizar password si se proporciona uno nuevo
+            if password:
+                data['password'] = password
             
             if existing.data:
+                # Actualizar existente
                 self.supabase.table('credenciales').update(data).eq('guild_id', str(guild_id)).execute()
-                logger.info(f"Actualizado {guild_id}")
+                logger.info(f"✅ Credenciales actualizadas para {guild_id}")
             else:
+                # Insertar nuevo
+                data['password'] = password  # password es obligatorio para nuevo
                 self.supabase.table('credenciales').insert(data).execute()
-                logger.info(f"Insertado {guild_id}")
+                logger.info(f"✅ Credenciales insertadas para {guild_id}")
             
             return True
         except Exception as e:
-            logger.error(f"Error guardando: {e}")
+            logger.error(f"❌ Error guardando credenciales: {e}")
             return False
     
     async def obtener_credenciales(self, guild_id):
+        """Obtiene credenciales de un servidor"""
         try:
             if not guild_id:
                 return None
@@ -52,17 +62,19 @@ class Database:
             result = self.supabase.table('credenciales').select('*').eq('guild_id', str(guild_id)).execute()
             return result.data[0] if result.data else None
         except Exception as e:
-            logger.error(f"Error obteniendo: {e}")
+            logger.error(f"❌ Error obteniendo credenciales: {e}")
             return None
     
+    # ========== CONFIGURACIÓN ==========
     async def guardar_config(self, guild_id, canal_id, canal_nombre, hora, minuto, mensaje_personalizado=None):
-        """Guarda la configuración del bot para un servidor"""
+        """Guarda la configuración del bot"""
         try:
-            logger.info(f"⚙️ Guardando configuración para guild: {guild_id}")
-            logger.info(f"   Canal: {canal_nombre} ({canal_id}), Hora: {hora}:{minuto}")
-            
             if not guild_id:
-                logger.error("❌ ERROR: guild_id está vacío")
+                logger.error("❌ guild_id vacío")
+                return False
+            
+            if not canal_id:
+                logger.error("❌ canal_id vacío")
                 return False
             
             data = {
@@ -76,18 +88,21 @@ class Database:
                 'fecha_actualizacion': 'now()'
             }
             
+            # Verificar si ya existe
             existing = self.supabase.table('configuracion').select('*').eq('guild_id', str(guild_id)).execute()
             
             if existing.data:
+                # Actualizar
                 self.supabase.table('configuracion').update(data).eq('guild_id', str(guild_id)).execute()
                 logger.info(f"✅ Configuración actualizada para {guild_id}")
             else:
+                # Insertar
                 self.supabase.table('configuracion').insert(data).execute()
-                logger.info(f"✅ Nueva configuración guardada para {guild_id}")
+                logger.info(f"✅ Configuración insertada para {guild_id}")
             
             return True
         except Exception as e:
-            logger.error(f"❌ Error guardando config: {e}")
+            logger.error(f"❌ Error guardando configuración: {e}")
             return False
     
     async def obtener_config(self, guild_id):
@@ -99,11 +114,12 @@ class Database:
             result = self.supabase.table('configuracion').select('*').eq('guild_id', str(guild_id)).execute()
             return result.data[0] if result.data else None
         except Exception as e:
-            logger.error(f"Error obteniendo config: {e}")
+            logger.error(f"❌ Error obteniendo configuración: {e}")
             return None
     
+    # ========== SERVIDORES ACTIVOS ==========
     async def obtener_servidores_activos(self):
-        """Obtiene todos los servidores activos con sus credenciales y config"""
+        """Obtiene servidores con credenciales y configuración"""
         try:
             configs = self.supabase.table('configuracion').select('*').eq('activo', True).execute()
             
@@ -119,10 +135,12 @@ class Database:
             
             return resultado
         except Exception as e:
-            logger.error(f"Error obteniendo servidores: {e}")
+            logger.error(f"❌ Error obteniendo servidores activos: {e}")
             return []
     
+    # ========== ENVÍOS ==========
     async def registrar_envio(self, guild_id):
+        """Registra que hoy ya se envió"""
         try:
             from datetime import date
             data = {
@@ -132,10 +150,11 @@ class Database:
             self.supabase.table('envios').insert(data).execute()
             return True
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"❌ Error registrando envío: {e}")
             return False
     
     async def ya_se_envio_hoy(self, guild_id):
+        """Verifica si ya se envió hoy"""
         try:
             from datetime import date
             result = self.supabase.table('envios').select('*')\
@@ -144,5 +163,5 @@ class Database:
                 .execute()
             return len(result.data) > 0
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"❌ Error verificando envío: {e}")
             return False
