@@ -130,7 +130,6 @@ def init_api_routes(app):
             try:
                 from keep_alive import bot
                 if bot:
-                    # Crear tarea en el loop del bot
                     asyncio.run_coroutine_threadsafe(
                         bot.reprogramar_ahora(guild_id),
                         bot.loop
