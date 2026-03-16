@@ -1,3 +1,4 @@
+# app/database.py
 import os
 from supabase import create_client
 import logging
@@ -16,6 +17,7 @@ class Database:
         self.supabase = create_client(self.supabase_url, self.supabase_key)
         logger.info("✅ Conectado a Supabase")
     
+    # ========== CREDENCIALES ==========
     async def guardar_credenciales(self, guild_id, guild_name, usuario, password):
         try:
             if not guild_id:
@@ -48,6 +50,7 @@ class Database:
             logger.error(f"Error obteniendo credenciales: {e}")
             return None
     
+    # ========== CONFIGURACIÓN ==========
     async def guardar_config(self, guild_id, canal_id, canal_nombre, hora, minuto, mensaje=None):
         try:
             if not guild_id or not canal_id:
@@ -83,6 +86,7 @@ class Database:
             logger.error(f"Error obteniendo configuración: {e}")
             return None
     
+    # ========== SERVIDORES DEL BOT ==========
     async def agregar_servidor_bot(self, guild_id, guild_name):
         try:
             data = {
@@ -112,6 +116,7 @@ class Database:
             logger.error(f"Error obteniendo servidores: {e}")
             return []
     
+    # ========== SERVIDORES ACTIVOS ==========
     async def obtener_servidores_activos(self):
         try:
             configs = self.supabase.table('configuracion').select('*').eq('activo', True).execute()
@@ -129,6 +134,7 @@ class Database:
             logger.error(f"Error obteniendo servidores activos: {e}")
             return []
     
+    # ========== ENVÍOS ==========
     async def registrar_envio(self, guild_id):
         try:
             from datetime import date
@@ -152,4 +158,21 @@ class Database:
             return len(result.data) > 0
         except Exception as e:
             logger.error(f"Error verificando envío: {e}")
+            return False
+    
+    # ========== NUEVA FUNCIÓN: ELIMINAR TODO ==========
+    async def eliminar_todo_servidor(self, guild_id):
+        """Elimina TODOS los datos de un servidor (credenciales, config, envios)"""
+        try:
+            logger.info(f"🗑️ Eliminando todos los datos del servidor {guild_id}")
+            
+            # Eliminar en orden (primero las que tienen dependencias)
+            self.supabase.table('envios').delete().eq('guild_id', str(guild_id)).execute()
+            self.supabase.table('configuracion').delete().eq('guild_id', str(guild_id)).execute()
+            self.supabase.table('credenciales').delete().eq('guild_id', str(guild_id)).execute()
+            
+            logger.info(f"✅ Datos eliminados para {guild_id}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error eliminando datos: {e}")
             return False
