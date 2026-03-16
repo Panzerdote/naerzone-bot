@@ -226,17 +226,20 @@ def api_eliminar_servidor(guild_id):
         if not resultado:
             return jsonify({"error": "Error eliminando datos"}), 500
         
-        # 2. Hacer que el bot abandone el servidor
+        # 2. Hacer que el bot abandone el servidor (CORREGIDO)
         if bot:
             guild = bot.get_guild(int(guild_id))
             if guild:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(guild.leave())
-                loop.close()
+                # Usar el loop del bot en lugar de crear uno nuevo
+                asyncio.run_coroutine_threadsafe(
+                    guild.leave(),
+                    bot.loop
+                )
                 logger.info(f"👋 Bot expulsado manualmente del servidor {guild_id}")
             else:
                 logger.warning(f"⚠️ No se encontró el guild {guild_id} en el bot")
+        else:
+            logger.warning("⚠️ Bot no disponible para expulsar")
         
         return jsonify({"exito": True})
         
