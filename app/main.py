@@ -262,9 +262,8 @@ class NaerzoneBot(commands.Bot):
         logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
         await self.db.eliminar_servidor_bot(guild.id)
     
-    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA (CORREGIDA) =====
+    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA =====
     async def reprogramar_ahora(self, guild_id):
-        """Reprograma el envío para un servidor INMEDIATAMENTE"""
         logger.info(f"⚡ REPROGRAMACIÓN INMEDIATA para servidor {guild_id}")
         
         # Cancelar tarea existente
@@ -298,20 +297,17 @@ class NaerzoneBot(commands.Bot):
             second=0, microsecond=0
         )
         
-        # Si la hora ya pasó hoy, programar para mañana
         if ahora >= proximo:
             proximo += timedelta(days=1)
         
         espera = (proximo - ahora).total_seconds()
         
-        # 🔥 CORRECCIÓN: Si la espera es muy pequeña, darle al menos 2 segundos
         if espera < 2:
             espera = 2
             logger.info(f"   ⚠️ Espera muy corta, ajustando a 2 segundos")
         
         logger.info(f"   Nueva hora programada: {proximo.strftime('%H:%M')} (en {espera:.1f} segundos)")
         
-        # Crear NUEVA tarea
         task_id = f"{guild_id}_{proximo.strftime('%Y%m%d_%H%M')}"
         
         async def enviar_con_espera(gid, cid, creds, config, delay, tid):
