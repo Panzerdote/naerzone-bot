@@ -5,6 +5,8 @@ import requests
 import asyncio
 import discord
 import os
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
 db = Database()
@@ -16,6 +18,7 @@ HEADERS = {
 }
 
 BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
+chile_tz = pytz.timezone('America/Santiago')
 
 def verificar_credenciales_naerzone(usuario, password):
     try:
@@ -59,6 +62,7 @@ async def obtener_canales_discord(guild_id):
         return []
 
 def init_api_routes(app):
+    
     @app.route('/api/verificar-credenciales', methods=['POST'])
     def api_verificar():
         data = request.json
@@ -76,10 +80,13 @@ def init_api_routes(app):
         guild_name = data.get('guild_name', 'Servidor')
         usuario = data.get('usuario')
         password = data.get('password')
+        
         if not guild_id or not usuario:
             return jsonify({'exito': False, 'error': 'Faltan datos'})
+        
         if password and not verificar_credenciales_naerzone(usuario, password):
             return jsonify({'exito': False, 'error': 'Credenciales inválidas'})
+        
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resultado = loop.run_until_complete(
@@ -93,12 +100,13 @@ def init_api_routes(app):
         data = request.json
         guild_id = data.get('guild_id')
         canal_id = data.get('canal_id')
-        canal_nombre = data.get('canal_nombre', '')
         hora = data.get('hora', 22)
         minuto = data.get('minuto', 0)
         mensaje = data.get('mensaje_personalizado')
+        
         if not guild_id or not canal_id:
             return jsonify({'exito': False, 'error': 'Faltan datos'})
+        
         try:
             hora = int(hora)
             minuto = int(minuto)
@@ -106,11 +114,24 @@ def init_api_routes(app):
                 return jsonify({'exito': False, 'error': 'Hora inválida'})
         except:
             return jsonify({'exito': False, 'error': 'Hora inválida'})
+        
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
         resultado = loop.run_until_complete(
-            db.guardar_config(guild_id, canal_id, canal_nombre, hora, minuto, mensaje)
+            db.guardar_config(guild_id, canal_id, '', hora, minuto, mensaje)
         )
+        
+        # ========== LLAMADA A REPROGRAMACIÓN ==========
+        if resultado:
+            try:
+                from keep_alive import reprogramar_servidor
+                loop.run_until_complete(reprogramar_servidor(guild_id))
+                logger.info(f"🔄 Servidor {guild_id} reprogramado tras guardar configuración")
+            except Exception as e:
+                logger.error(f"❌ Error reprogramando: {e}")
+        # =============================================
+        
         loop.close()
         return jsonify({'exito': resultado})
     
