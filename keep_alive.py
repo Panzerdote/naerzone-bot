@@ -10,7 +10,7 @@ import pytz
 import asyncio
 from waitress import serve
 
-# ==================== PATCH PARA AUDIOOP ====================
+# ==================== PATCH AUDIOOP ====================
 import sys
 import types
 if 'audioop' not in sys.modules:
@@ -27,7 +27,7 @@ if 'audioop' not in sys.modules:
         setattr(audioop_mock, func_name, dummy_func)
     sys.modules['audioop'] = audioop_mock
     print("✅ Parche de audioop aplicado correctamente")
-# ============================================================
+# ========================================================
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -53,7 +53,7 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
-# Referencia al bot (se asigna desde main.py)
+# Referencia al bot (se exporta para que web.py pueda usarlo)
 bot = None
 
 def obtener_datos_servidor(guild_id):
@@ -68,49 +68,6 @@ def obtener_datos_servidor(guild_id):
     except Exception as e:
         logger.error(f"Error obteniendo datos: {e}")
         return None, None
-
-# ==================== FUNCIÓN DE REPROGRAMACIÓN (MEJORADA Y SEGURA) ====================
-async def reprogramar_servidor(guild_id):
-    """Fuerza la reprogramación de un servidor específico después de guardar configuración"""
-    global bot
-    if not bot:
-        logger.warning("⚠️ Bot no disponible para reprogramar")
-        return False
-    
-    try:
-        logger.info(f"🔄 Intentando reprogramar servidor {guild_id}")
-        
-        # Verificar que el bot tenga el atributo tareas_programadas
-        if not hasattr(bot, 'tareas_programadas'):
-            logger.warning("⚠️ El bot no tiene el atributo tareas_programadas")
-            return False
-        
-        tareas_canceladas = 0
-        tareas_a_eliminar = []
-        
-        # Crear una copia de las keys para evitar modificar el diccionario mientras se itera
-        task_ids = list(bot.tareas_programadas.keys())
-        
-        for task_id in task_ids:
-            if str(guild_id) in str(task_id):
-                logger.info(f"   ✅ Cancelando tarea: {task_id}")
-                task = bot.tareas_programadas.get(task_id)
-                if task:
-                    task.cancel()
-                    tareas_a_eliminar.append(task_id)
-                    tareas_canceladas += 1
-        
-        # Eliminar las tareas canceladas
-        for task_id in tareas_a_eliminar:
-            if task_id in bot.tareas_programadas:
-                del bot.tareas_programadas[task_id]
-        
-        logger.info(f"✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s)")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Error reprogramando servidor {guild_id}: {e}")
-        return False
-# ====================================================================
 
 @app.route('/health')
 def health():
