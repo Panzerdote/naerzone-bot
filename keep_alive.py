@@ -53,6 +53,7 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
+# Referencia al bot (se exporta para que web.py pueda usarlo)
 bot = None
 
 def obtener_datos_servidor(guild_id):
@@ -114,6 +115,7 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
+# ==================== FUNCIÓN DASHBOARD CORREGIDA ====================
 @app.route('/dashboard')
 def dashboard():
     if 'oauth_token' not in session:
@@ -123,33 +125,44 @@ def dashboard():
         discord = OAuth2Session(DISCORD_CLIENT_ID, token=token)
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
+        
+        # Obtener lista de servidores donde el bot está presente
+        # (desde la tabla bot_guilds, NO desde configuracion)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         db = Database()
         bot_guilds_ids = loop.run_until_complete(db.obtener_servidores_bot())
         loop.close()
+        
         admin_guilds = []
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
+                # Verificar si el bot está en este servidor (usa bot_guilds)
+                bot_esta = str(g['id']) in bot_guilds_ids
+                
+                # Verificar si tiene configuración (para el badge)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
                 loop.close()
+                
                 guild_info = {
                     'id': g['id'],
                     'name': g['name'],
                     'icon': g.get('icon'),
-                    'bot_esta': str(g['id']) in bot_guilds_ids,
+                    'bot_esta': bot_esta,  # ✅ AHORA ES CORRECTO
                     'configurado': config is not None
                 }
                 admin_guilds.append(guild_info)
+        
         return render_template('dashboard.html', 
                              user=session['user'],
                              guilds=admin_guilds)
     except Exception as e:
         logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
+# ====================================================================
 
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
