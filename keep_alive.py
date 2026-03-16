@@ -33,6 +33,9 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
+# Referencia al bot (se asignará desde main.py)
+bot = None
+
 logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
 
 # ==================== FUNCIÓN AUXILIAR ====================
@@ -49,6 +52,40 @@ def obtener_datos_servidor(guild_id):
     except Exception as e:
         logger.error(f"❌ Error obteniendo datos: {e}")
         return None, None
+
+# ==================== FUNCIÓN DE REPROGRAMACIÓN ====================
+async def reprogramar_servidor(guild_id):
+    """Fuerza la reprogramación de un servidor específico después de guardar configuración"""
+    global bot
+    if not bot:
+        logger.warning("⚠️ Bot no disponible para reprogramar")
+        return False
+    
+    try:
+        logger.info(f"🔄 Intentando reprogramar servidor {guild_id}")
+        
+        # Buscar tarea existente y cancelarla
+        tareas_canceladas = 0
+        tareas_a_eliminar = []
+        
+        for task_id, task in bot.tareas_programadas.items():
+            if str(guild_id) in task_id:
+                logger.info(f"   Cancelando tarea: {task_id}")
+                task.cancel()
+                tareas_a_eliminar.append(task_id)
+                tareas_canceladas += 1
+        
+        # Eliminar las tareas canceladas del diccionario
+        for task_id in tareas_a_eliminar:
+            del bot.tareas_programadas[task_id]
+        
+        logger.info(f"✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s)")
+        
+        # La próxima vez que el loop de programación corra, creará una nueva tarea
+        return True
+    except Exception as e:
+        logger.error(f"❌ Error reprogramando servidor {guild_id}: {e}")
+        return False
 
 # ==================== HEALTH CHECKS ====================
 @app.route('/health')
@@ -112,7 +149,6 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        # Obtener lista de servidores donde el bot está presente (desde Supabase)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         db = Database()
@@ -123,9 +159,6 @@ def dashboard():
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
-                # Verificar si el bot está en este servidor
-                bot_esta = str(g['id']) in bot_guilds_ids
-                # Obtener configuración si existe
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
@@ -135,7 +168,7 @@ def dashboard():
                     'id': g['id'],
                     'name': g['name'],
                     'icon': g.get('icon'),
-                    'bot_esta': bot_esta,
+                    'bot_esta': str(g['id']) in bot_guilds_ids,
                     'configurado': config is not None
                 }
                 admin_guilds.append(guild_info)
@@ -159,7 +192,6 @@ def guild_config(guild_id):
         return "Error: ID de servidor no válido", 400
     
     guild_name = request.args.get('name', 'Servidor')
-    
     credenciales, config = obtener_datos_servidor(guild_id)
     
     return render_template('guild_config.html', 
@@ -192,6 +224,19 @@ def api_user_guilds():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/reprogramar/<guild_id>', methods=['POST'])
+def api_reprogramar(guild_id):
+    """Endpoint manual para forzar reprogramación (útil para debugging)"""
+    if 'oauth_token' not in session:
+        return jsonify({"error": "No autenticado"}), 401
+    
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    resultado = loop.run_until_complete(reprogramar_servidor(guild_id))
+    loop.close()
+    
+    return jsonify({"reprogramado": resultado})
+
 # ==================== PÁGINA PRINCIPAL ====================
 @app.route('/')
 def home():
@@ -213,7 +258,13 @@ def run():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
 
-def keep_alive():
+def keep_alive(bot_instance=None):
+    """Inicia el servidor web y guarda referencia al bot"""
+    global bot
+    if bot_instance:
+        bot = bot_instance
+        logger.info("✅ Referencia al bot guardada en keep_alive")
+    
     try:
         thread = Thread(target=run, daemon=True)
         thread.start()
