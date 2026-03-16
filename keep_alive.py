@@ -10,6 +10,7 @@ from requests_oauthlib import OAuth2Session
 from datetime import datetime
 import pytz
 import asyncio
+from waitress import serve  # <--- NUEVO: servidor production
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
@@ -33,12 +34,10 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
-# Referencia al bot (se asignará desde main.py)
 bot = None
 
 logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
 
-# ==================== FUNCIÓN AUXILIAR ====================
 def obtener_datos_servidor(guild_id):
     try:
         loop = asyncio.new_event_loop()
@@ -53,9 +52,7 @@ def obtener_datos_servidor(guild_id):
         logger.error(f"❌ Error obteniendo datos: {e}")
         return None, None
 
-# ==================== FUNCIÓN DE REPROGRAMACIÓN ====================
 async def reprogramar_servidor(guild_id):
-    """Fuerza la reprogramación de un servidor específico después de guardar configuración"""
     global bot
     if not bot:
         logger.warning("⚠️ Bot no disponible para reprogramar")
@@ -63,8 +60,6 @@ async def reprogramar_servidor(guild_id):
     
     try:
         logger.info(f"🔄 Intentando reprogramar servidor {guild_id}")
-        
-        # Buscar tarea existente y cancelarla
         tareas_canceladas = 0
         tareas_a_eliminar = []
         
@@ -75,19 +70,15 @@ async def reprogramar_servidor(guild_id):
                 tareas_a_eliminar.append(task_id)
                 tareas_canceladas += 1
         
-        # Eliminar las tareas canceladas del diccionario
         for task_id in tareas_a_eliminar:
             del bot.tareas_programadas[task_id]
         
         logger.info(f"✅ Servidor {guild_id} reprogramado: {tareas_canceladas} tarea(s) cancelada(s)")
-        
-        # La próxima vez que el loop de programación corra, creará una nueva tarea
         return True
     except Exception as e:
         logger.error(f"❌ Error reprogramando servidor {guild_id}: {e}")
         return False
 
-# ==================== HEALTH CHECKS ====================
 @app.route('/health')
 def health():
     return jsonify({"status": "healthy", "timestamp": time.time()}), 200
@@ -96,7 +87,6 @@ def health():
 def ping():
     return "pong", 200
 
-# ==================== AUTENTICACIÓN ====================
 @app.route('/login')
 def login():
     discord = OAuth2Session(
@@ -136,7 +126,6 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ==================== DASHBOARD PRINCIPAL ====================
 @app.route('/dashboard')
 def dashboard():
     if 'oauth_token' not in session:
@@ -180,7 +169,6 @@ def dashboard():
         logger.error(f"❌ Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
-# ==================== CONFIGURACIÓN DE SERVIDOR ====================
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
     logger.info(f"⚙️ Accediendo a configuración para guild_id: {guild_id}")
@@ -200,7 +188,6 @@ def guild_config(guild_id):
                          credenciales=credenciales,
                          config=config)
 
-# ==================== FILTROS Y CONTEXTO ====================
 @app.template_filter('strftime')
 def jinja_strftime(date, format):
     return date.strftime(format)
@@ -211,7 +198,6 @@ def utility_processor():
         return datetime.now(pytz.timezone('America/Santiago'))
     return dict(now=now)
 
-# ==================== API ====================
 @app.route('/api/user/guilds')
 def api_user_guilds():
     if 'oauth_token' not in session:
@@ -226,7 +212,6 @@ def api_user_guilds():
 
 @app.route('/api/reprogramar/<guild_id>', methods=['POST'])
 def api_reprogramar(guild_id):
-    """Endpoint manual para forzar reprogramación (útil para debugging)"""
     if 'oauth_token' not in session:
         return jsonify({"error": "No autenticado"}), 401
     
@@ -237,7 +222,6 @@ def api_reprogramar(guild_id):
     
     return jsonify({"reprogramado": resultado})
 
-# ==================== PÁGINA PRINCIPAL ====================
 @app.route('/')
 def home():
     try:
@@ -256,10 +240,11 @@ def login_page(guild_id):
 
 def run():
     port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    logger.info(f"🌐 Servidor web production iniciado en puerto {port} con waitress")
+    # Usar waitress en lugar de app.run()
+    serve(app, host='0.0.0.0', port=port, threads=4)
 
 def keep_alive(bot_instance=None):
-    """Inicia el servidor web y guarda referencia al bot"""
     global bot
     if bot_instance:
         bot = bot_instance
@@ -268,7 +253,7 @@ def keep_alive(bot_instance=None):
     try:
         thread = Thread(target=run, daemon=True)
         thread.start()
-        logger.info("✅ Servidor web iniciado")
+        logger.info("✅ Servidor web production iniciado con waitress")
         return thread
     except Exception as e:
         logger.error(f"❌ Error iniciando servidor: {e}")
