@@ -4,6 +4,7 @@ import logging
 import os
 import time
 import secrets
+import json
 from requests_oauthlib import OAuth2Session
 from datetime import datetime
 import pytz
@@ -52,6 +53,13 @@ app = Flask(__name__,
             template_folder='templates',
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
+
+# ========== NUEVO FILTRO ESCAPEJS (SOLO ESTO SE AÑADE) ==========
+@app.template_filter('escapejs')
+def escapejs_filter(s):
+    """Escapa un string para usarlo en JavaScript"""
+    return json.dumps(s)[1:-1]  # Elimina las comillas externas
+# ===============================================================
 
 # Referencia al bot
 bot = None
