@@ -122,15 +122,17 @@ def init_api_routes(app):
             db.guardar_config(guild_id, canal_id, '', hora, minuto, mensaje)
         )
         
-        # ========== LLAMADA A REPROGRAMACIÓN ==========
+        # ========== LLAMADA A REPROGRAMACIÓN CON TRY/EXCEPT ==========
         if resultado:
             try:
                 from keep_alive import reprogramar_servidor
-                loop.run_until_complete(reprogramar_servidor(guild_id))
-                logger.info(f"🔄 Servidor {guild_id} reprogramado tras guardar configuración")
+                # Ejecutar reprogramación pero NO detener el flujo si falla
+                asyncio.create_task(reprogramar_servidor(guild_id))
+                logger.info(f"🔄 Tarea de reprogramación iniciada para {guild_id}")
             except Exception as e:
-                logger.error(f"❌ Error reprogramando: {e}")
-        # =============================================
+                logger.error(f"❌ Error al iniciar reprogramación: {e}")
+                # El bot sigue funcionando aunque falle la reprogramación
+        # ============================================================
         
         loop.close()
         return jsonify({'exito': resultado})
