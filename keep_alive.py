@@ -53,7 +53,7 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
-# Referencia al bot (se exporta para que web.py pueda usarlo)
+# Referencia al bot
 bot = None
 
 def obtener_datos_servidor(guild_id):
@@ -115,7 +115,6 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ==================== FUNCIÓN DASHBOARD CORREGIDA ====================
 @app.route('/dashboard')
 def dashboard():
     if 'oauth_token' not in session:
@@ -126,8 +125,6 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        # Obtener lista de servidores donde el bot está presente
-        # (desde la tabla bot_guilds, NO desde configuracion)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         db = Database()
@@ -138,10 +135,6 @@ def dashboard():
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
-                # Verificar si el bot está en este servidor (usa bot_guilds)
-                bot_esta = str(g['id']) in bot_guilds_ids
-                
-                # Verificar si tiene configuración (para el badge)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
@@ -151,7 +144,7 @@ def dashboard():
                     'id': g['id'],
                     'name': g['name'],
                     'icon': g.get('icon'),
-                    'bot_esta': bot_esta,  # ✅ AHORA ES CORRECTO
+                    'bot_esta': str(g['id']) in bot_guilds_ids,
                     'configurado': config is not None
                 }
                 admin_guilds.append(guild_info)
@@ -162,7 +155,6 @@ def dashboard():
     except Exception as e:
         logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
-# ====================================================================
 
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
@@ -192,6 +184,58 @@ def home():
     except Exception as e:
         logger.error(f"Error en home: {e}")
         return jsonify({"error": str(e)}), 500
+
+# ==================== NUEVA RUTA API PARA ELIMINAR SERVIDOR ====================
+@app.route('/api/eliminar-servidor/<guild_id>', methods=['POST'])
+def api_eliminar_servidor(guild_id):
+    """API para que un administrador elimine el bot y sus datos de un servidor"""
+    if 'oauth_token' not in session:
+        return jsonify({"error": "No autenticado"}), 401
+    
+    try:
+        # Verificar que el usuario es administrador del servidor
+        token = session['oauth_token']
+        discord = OAuth2Session(DISCORD_CLIENT_ID, token=token)
+        guilds_response = discord.get(DISCORD_GUILDS_URL)
+        user_guilds = guilds_response.json()
+        
+        es_admin = False
+        for g in user_guilds:
+            if str(g['id']) == str(guild_id) and (int(g['permissions']) & 0x8) == 0x8:
+                es_admin = True
+                break
+        
+        if not es_admin:
+            return jsonify({"error": "No eres administrador de este servidor"}), 403
+        
+        # 1. Eliminar datos de Supabase
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        db = Database()
+        resultado = loop.run_until_complete(db.eliminar_todo_servidor(guild_id))
+        loop.close()
+        
+        if not resultado:
+            return jsonify({"error": "Error eliminando datos"}), 500
+        
+        # 2. Hacer que el bot abandone el servidor
+        if bot:
+            guild = bot.get_guild(int(guild_id))
+            if guild:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(guild.leave())
+                loop.close()
+                logger.info(f"👋 Bot expulsado manualmente del servidor {guild_id}")
+            else:
+                logger.warning(f"⚠️ No se encontró el guild {guild_id} en el bot")
+        
+        return jsonify({"exito": True})
+        
+    except Exception as e:
+        logger.error(f"❌ Error en api_eliminar_servidor: {e}")
+        return jsonify({"error": str(e)}), 500
+# =================================================================================
 
 def run():
     port = int(os.environ.get("PORT", 10000))
