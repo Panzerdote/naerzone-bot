@@ -6,6 +6,8 @@ import requests
 import asyncio
 import discord
 import os
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
 db = Database()
@@ -17,8 +19,6 @@ HEADERS = {
 }
 
 BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
-
-# ==================== FUNCIONES AUXILIARES ====================
 
 def verificar_credenciales_naerzone(usuario, password):
     try:
@@ -53,7 +53,6 @@ async def obtener_canales_discord(guild_id):
         
         logger.info(f"✅ Gremio obtenido: {guild.name} (ID: {guild.id})")
         
-        # Usar fetch_channels() para obtener canales
         logger.info(f"📡 Solicitando canales vía fetch_channels()...")
         canales = await guild.fetch_channels()
         
@@ -61,13 +60,13 @@ async def obtener_canales_discord(guild_id):
         
         canales_texto = []
         for canal in canales:
-            logger.info(f"   - #{canal.name} (ID: {canal.id}, Tipo: {canal.type})")
             if isinstance(canal, discord.TextChannel):
                 canales_texto.append({
                     'id': str(canal.id),
                     'name': canal.name,
                     'position': canal.position
                 })
+                logger.info(f"   - #{canal.name} (ID: {canal.id}, Tipo: {canal.type})")
         
         await client.close()
         
@@ -131,36 +130,47 @@ def init_api_routes(app):
         data = request.json
         guild_id = data.get('guild_id')
         canal_id = data.get('canal_id')
-        canal_nombre = data.get('canal_nombre', '')
         hora = data.get('hora', 22)
         minuto = data.get('minuto', 0)
         mensaje = data.get('mensaje_personalizado')
         
+        hora_actual = datetime.now(pytz.timezone('America/Santiago')).strftime('%H:%M:%S')
+        logger.info(f"🔥🔥🔥 RECIBIDA PETICIÓN DE GUARDAR CONFIG a las {hora_actual} para guild {guild_id}")
+        logger.info(f"   Datos: canal={canal_id}, hora={hora}:{minuto}, mensaje={mensaje}")
+        
         if not guild_id or not canal_id:
+            logger.error("❌ Faltan datos obligatorios")
             return jsonify({'exito': False, 'error': 'Faltan datos'})
         
         try:
             hora = int(hora)
             minuto = int(minuto)
             if hora < 0 or hora > 23 or minuto < 0 or minuto > 59:
+                logger.error(f"❌ Hora inválida: {hora}:{minuto}")
                 return jsonify({'exito': False, 'error': 'Hora inválida'})
         except:
+            logger.error(f"❌ Hora no numérica: {hora}:{minuto}")
             return jsonify({'exito': False, 'error': 'Hora inválida'})
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
+        logger.info("💾 Guardando en base de datos...")
         resultado = loop.run_until_complete(
-            db.guardar_config(guild_id, canal_id, canal_nombre, hora, minuto, mensaje)
+            db.guardar_config(guild_id, canal_id, '', hora, minuto, mensaje)
         )
         
-        # 🔥 NUEVO: Reprogramar el servidor si se guardó correctamente
         if resultado:
+            logger.info(f"✅✅✅ Configuración GUARDADA CORRECTAMENTE para {guild_id}")
             try:
                 from keep_alive import reprogramar_servidor
+                logger.info(f"🔄 LLAMANDO A reprogramar_servidor({guild_id})...")
                 loop.run_until_complete(reprogramar_servidor(guild_id))
-                logger.info(f"🔄 Servidor {guild_id} reprogramado tras guardar configuración")
+                logger.info(f"🔄✅ reprogramar_servidor ejecutado correctamente")
             except Exception as e:
-                logger.error(f"❌ Error reprogramando: {e}")
+                logger.error(f"❌❌❌ Error reprogramando: {e}")
+        else:
+            logger.error(f"❌❌❌ Falló el guardado en base de datos para {guild_id}")
         
         loop.close()
         return jsonify({'exito': resultado})
