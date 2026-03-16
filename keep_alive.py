@@ -10,6 +10,31 @@ import pytz
 import asyncio
 from waitress import serve
 
+# ==================== PATCH PARA AUDIOOP (Python 3.13+) ====================
+import sys
+import types
+
+# Crear un mock de audioop si no existe
+if 'audioop' not in sys.modules:
+    audioop_mock = types.ModuleType('audioop')
+    
+    def dummy_func(*args, **kwargs):
+        if args and len(args) > 0 and isinstance(args[0], bytes):
+            return args[0]
+        return b''
+    
+    # Lista de todas las funciones que audioop solía tener
+    for func_name in ['add', 'mul', 'lin2lin', 'ratecv', 'tomono', 'tostereo',
+                      'findfactor', 'findfit', 'findmax', 'getsample',
+                      'lin2adpcm', 'lin2alaw', 'lin2ulaw', 'adpcm2lin',
+                      'alaw2lin', 'ulaw2lin', 'reverse', 'cross', 'bias',
+                      'downsample', 'find']:
+        setattr(audioop_mock, func_name, dummy_func)
+    
+    sys.modules['audioop'] = audioop_mock
+    print("✅ Parche de audioop aplicado correctamente en keep_alive")
+# ============================================================================
+
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 logging.basicConfig(level=logging.INFO)
