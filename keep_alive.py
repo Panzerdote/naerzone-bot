@@ -53,7 +53,6 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
-# Referencia al bot (se exporta para que web.py pueda usarlo)
 bot = None
 
 def obtener_datos_servidor(guild_id):
