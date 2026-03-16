@@ -275,20 +275,17 @@ class NaerzoneBot(commands.Bot):
                 title="🎉 ¡Gracias por invitarme!",
                 description=(
                     "Soy el bot de **Ofertas Naerzone**\n\n"
-                    "**IMPORTANTE:** Para funcionar, necesito tus credenciales de Naerzone.\n\n"
-                    "🌐 **Ve a la web de configuración:**\n"
-                    f"```\n{base_url}\n```\n\n"
+                    "**IMPORTANTE:** Para funcionar, se requieren credenciales de Naerzone.\n"
+                    "-# Te aconsejo crear una cuenta exclusivamente para el bot.\n\n"
                     "📝 **Pasos:**\n"
-                    "1️⃣ Ve a la web y haz clic en 'Dashboard'\n"
+                    "1️⃣ Ve a la web entregada por el autor y haz clic en 'Dashboard'\n"
                     "2️⃣ Inicia sesión con Discord\n"
                     "3️⃣ Selecciona este servidor y configura:\n"
                     "   • Credenciales de Naerzone\n"
                     "   • Canal de envío\n"
                     "   • Hora de envío\n"
-                    "   • Mensaje personalizado (opcional)\n\n"
-                    "📌 **Comandos disponibles:**\n"
-                    "`n!comandos` - Ver todos los comandos\n"
-                    "`n!promo` - Ver oferta manualmente"
+                    "   • Mensaje personalizado\n\n"
+                    " Con esto ya tienes el bot funcionando!"
                 ),
                 color=0x5865F2
             )
