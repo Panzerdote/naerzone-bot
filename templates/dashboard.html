@@ -10,17 +10,20 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1a1b2f 0%, #2a2b4a 100%);
             color: white;
             min-height: 100vh;
         }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 40px 20px;
         }
+
         header {
             display: flex;
             justify-content: space-between;
@@ -31,23 +34,28 @@
             border-radius: 15px;
             backdrop-filter: blur(10px);
         }
+
         .logo {
             font-size: 1.8rem;
             font-weight: 800;
         }
+
         .logo span {
             color: #5865F2;
         }
+
         .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
         }
+
         .user-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
         }
+
         .btn-logout {
             background: #ed4245;
             color: white;
@@ -55,38 +63,47 @@
             border-radius: 8px;
             text-decoration: none;
             font-size: 0.9rem;
+            transition: background 0.3s;
         }
+
         .btn-logout:hover {
             background: #c03538;
         }
+
         h1 {
             margin-bottom: 30px;
         }
+
         h1 span {
             color: #5865F2;
         }
+
         .guilds-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
         }
+
         .guild-card {
             background: rgba(44, 47, 51, 0.9);
             border-radius: 15px;
             padding: 20px;
             transition: transform 0.3s;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .guild-card:hover {
             transform: translateY(-5px);
             border-color: #5865F2;
         }
+
         .guild-header {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 15px;
         }
+
         .guild-icon {
             width: 50px;
             height: 50px;
@@ -98,22 +115,27 @@
             font-size: 1.5rem;
             font-weight: bold;
         }
+
         .guild-icon img {
             width: 50px;
             height: 50px;
             border-radius: 50%;
         }
+
         .guild-name {
             font-size: 1.2rem;
             font-weight: 600;
             word-break: break-word;
         }
+
         .guild-status {
             margin: 15px 0;
             padding: 10px;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 8px;
+            font-size: 0.9rem;
         }
+
         .status-badge {
             display: inline-block;
             padding: 4px 8px;
@@ -122,27 +144,33 @@
             font-weight: 600;
             margin-right: 8px;
         }
+
         .status-bot-present {
             background: #3ba55c;
             color: white;
         }
+
         .status-bot-absent {
             background: #ed4245;
             color: white;
         }
+
         .status-configured {
             background: #5865F2;
             color: white;
         }
+
         .status-not-configured {
             background: #faa81a;
             color: white;
         }
+
         .guild-actions {
             display: flex;
             gap: 10px;
             margin-top: 15px;
         }
+
         .btn-config {
             flex: 1;
             padding: 10px;
@@ -152,16 +180,20 @@
             border-radius: 8px;
             text-align: center;
             font-weight: 600;
+            transition: background 0.3s;
         }
+
         .btn-config:hover:not(.disabled) {
             background: #4752c4;
         }
+
         .btn-config.disabled {
             background: #4f545c;
             cursor: not-allowed;
             opacity: 0.5;
             pointer-events: none;
         }
+
         .btn-invite {
             flex: 1;
             padding: 10px;
@@ -172,20 +204,26 @@
             border-radius: 8px;
             text-align: center;
             font-weight: 600;
+            transition: all 0.3s;
         }
+
         .btn-invite:hover {
-            background: rgba(88,101,242,0.1);
+            background: rgba(88, 101, 242, 0.1);
         }
+
         .empty-state {
             text-align: center;
             padding: 60px;
-            background: rgba(44,47,51,0.7);
+            background: rgba(44, 47, 51, 0.7);
             border-radius: 15px;
             color: #b9bbbe;
         }
+
         .empty-state h3 {
             color: white;
+            margin-bottom: 15px;
         }
+
         .btn-primary {
             display: inline-block;
             padding: 12px 24px;
@@ -196,17 +234,35 @@
             margin-top: 20px;
             font-weight: 600;
         }
+
+        .btn-primary:hover {
+            background: #4752c4;
+        }
+
         .invite-link {
             margin-top: 30px;
             text-align: center;
             padding: 20px;
-            background: rgba(88,101,242,0.1);
+            background: rgba(88, 101, 242, 0.1);
             border-radius: 10px;
         }
+
         .invite-link a {
             color: #5865F2;
             text-decoration: none;
             font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .guilds-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -225,7 +281,9 @@
         </header>
 
         <h1>📋 <span>Mis servidores</span></h1>
-        <p style="color:#b9bbbe; margin-bottom:30px;">Selecciona un servidor para configurar el bot</p>
+        <p style="color: #b9bbbe; margin-bottom: 30px;">
+            Selecciona un servidor para configurar el bot
+        </p>
 
         {% if guilds %}
             <div class="guilds-grid">
@@ -236,19 +294,30 @@
                                 <img src="https://cdn.discordapp.com/icons/{{ guild.id }}/{{ guild.icon }}.png" 
                                      class="guild-icon" alt="Icono">
                             {% else %}
-                                <div class="guild-icon">{{ guild.name[0] }}</div>
+                                <div class="guild-icon">
+                                    {{ guild.name[0] }}
+                                </div>
                             {% endif %}
                             <div class="guild-name">{{ guild.name }}</div>
                         </div>
+                        
                         <div class="guild-status">
-                            <span class="status-badge {{ 'status-bot-present' if guild.bot_esta else 'status-bot-absent' }}">
-                                {{ '✅ Bot presente' if guild.bot_esta else '❌ Bot no está' }}
-                            </span>
-                            <span class="status-badge {{ 'status-configured' if guild.configurado else 'status-not-configured' }}">
-                                {{ '⚙️ Configurado' if guild.configurado else '⚠️ Sin configurar' }}
-                            </span>
-                            <br><small>ID: {{ guild.id }}</small>
+                            <div style="margin-bottom: 8px;">
+                                {% if guild.bot_esta %}
+                                    <span class="status-badge status-bot-present">✅ Bot presente</span>
+                                {% else %}
+                                    <span class="status-badge status-bot-absent">❌ Bot no está</span>
+                                {% endif %}
+                                
+                                {% if guild.configurado %}
+                                    <span class="status-badge status-configured">⚙️ Configurado</span>
+                                {% else %}
+                                    <span class="status-badge status-not-configured">⚠️ Sin configurar</span>
+                                {% endif %}
+                            </div>
+                            <small>ID: {{ guild.id }}</small>
                         </div>
+                        
                         <div class="guild-actions">
                             {% if guild.bot_esta %}
                                 <a href="/guild/{{ guild.id }}?name={{ guild.name | urlencode }}" 
@@ -270,7 +339,7 @@
             <div class="empty-state">
                 <h3>No tienes servidores con permisos de administrador</h3>
                 <p>Para configurar un servidor, necesitas:</p>
-                <p style="margin:20px 0; color:white;">
+                <p style="margin: 20px 0; color: white;">
                     1️⃣ Invitar el bot a tu servidor<br>
                     2️⃣ Tener permisos de administrador
                 </p>
@@ -280,7 +349,8 @@
 
         <div class="invite-link">
             <p>¿Necesitas invitar el bot a otro servidor?</p>
-            <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot" target="_blank">
+            <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot" 
+               target="_blank">
                 🔗 Hacer clic aquí para invitar
             </a>
         </div>
