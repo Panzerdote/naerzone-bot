@@ -11,14 +11,11 @@ from datetime import datetime
 import pytz
 import asyncio
 
-# === SOLUCIÓN PARA OAUTH2 EN RENDER ===
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-# ======================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuración de Discord OAuth
 DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
 DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET', '')
 RENDER_URL = os.environ.get('RENDER_EXTERNAL_URL', 'https://naerzone-bot.onrender.com')
@@ -29,7 +26,6 @@ DISCORD_AUTH_URL = DISCORD_API_BASE + '/oauth2/authorize'
 DISCORD_USER_URL = DISCORD_API_BASE + '/users/@me'
 DISCORD_GUILDS_URL = DISCORD_API_BASE + '/users/@me/guilds'
 
-# Importar Database después de configurar logging
 from database import Database
 
 app = Flask(__name__, 
@@ -39,25 +35,16 @@ app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
 logger.info(f"🔧 Configuración OAuth2: Client ID {DISCORD_CLIENT_ID}")
 
-# ==================== FUNCIÓN AUXILIAR PARA OBTENER DATOS ====================
+# ==================== FUNCIÓN AUXILIAR ====================
 def obtener_datos_servidor(guild_id):
-    """Obtiene credenciales y configuración de un servidor"""
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
         db = Database()
-        
-        # Obtener credenciales y configuración
         credenciales = loop.run_until_complete(db.obtener_credenciales(guild_id))
         config = loop.run_until_complete(db.obtener_config(guild_id))
-        
         loop.close()
-        
-        logger.info(f"📊 Datos obtenidos para {guild_id}:")
-        logger.info(f"   - Credenciales: {'✅' if credenciales else '❌'}")
-        logger.info(f"   - Configuración: {'✅' if config else '❌'}")
-        
+        logger.info(f"📊 Datos obtenidos para {guild_id}: credenciales={'✅' if credenciales else '❌'}, config={'✅' if config else '❌'}")
         return credenciales, config
     except Exception as e:
         logger.error(f"❌ Error obteniendo datos: {e}")
@@ -125,13 +112,20 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        admin_guilds = []
+        # Obtener lista de servidores donde el bot está presente (desde Supabase)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         db = Database()
+        bot_guilds_ids = loop.run_until_complete(db.obtener_servidores_bot())
+        loop.close()
         
+        admin_guilds = []
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
-                # Verificar si el servidor tiene configuración (para saber si el bot está)
+                # Verificar si el bot está en este servidor
+                bot_esta = str(g['id']) in bot_guilds_ids
+                # Obtener configuración si existe
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
@@ -141,7 +135,7 @@ def dashboard():
                     'id': g['id'],
                     'name': g['name'],
                     'icon': g.get('icon'),
-                    'bot_esta': config is not None,  # Si tiene config, el bot está
+                    'bot_esta': bot_esta,
                     'configurado': config is not None
                 }
                 admin_guilds.append(guild_info)
@@ -156,23 +150,17 @@ def dashboard():
 # ==================== CONFIGURACIÓN DE SERVIDOR ====================
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
-    """Página de configuración para un servidor específico"""
     logger.info(f"⚙️ Accediendo a configuración para guild_id: {guild_id}")
     
     if 'oauth_token' not in session:
-        logger.warning("⚠️ Usuario no autenticado, redirigiendo")
         return redirect(url_for('home'))
     
-    if not guild_id or guild_id == '':
-        logger.error("❌ guild_id vacío")
+    if not guild_id:
         return "Error: ID de servidor no válido", 400
     
     guild_name = request.args.get('name', 'Servidor')
     
-    # Obtener credenciales y configuración
     credenciales, config = obtener_datos_servidor(guild_id)
-    
-    logger.info(f"📌 Renderizando template para {guild_name} ({guild_id})")
     
     return render_template('guild_config.html', 
                          guild_id=guild_id,
@@ -180,18 +168,14 @@ def guild_config(guild_id):
                          credenciales=credenciales,
                          config=config)
 
-# ==================== FILTROS PARA JINJA2 ====================
+# ==================== FILTROS Y CONTEXTO ====================
 @app.template_filter('strftime')
 def jinja_strftime(date, format):
-    """Filtro para formatear fechas"""
     return date.strftime(format)
 
-# ==================== CONTEXTO PARA TEMPLATES ====================
 @app.context_processor
 def utility_processor():
-    """Añade funciones útiles a templates"""
     def now():
-        """Devuelve fecha/hora actual en Chile"""
         return datetime.now(pytz.timezone('America/Santiago'))
     return dict(now=now)
 
@@ -227,7 +211,6 @@ def login_page(guild_id):
 
 def run():
     port = int(os.environ.get("PORT", 10000))
-    logger.info(f"🌐 Servidor web escuchando en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
 
 def keep_alive():
