@@ -29,12 +29,12 @@
             color: #5865F2;
         }
         .server-header {
-            background: rgba(88, 101, 242, 0.1);
+            background: rgba(88,101,242,0.1);
             padding: 20px;
             border-radius: 15px;
             text-align: center;
             margin-bottom: 30px;
-            border: 1px solid rgba(88, 101, 242, 0.3);
+            border: 1px solid rgba(88,101,242,0.3);
         }
         .server-name {
             font-size: 1.5rem;
@@ -46,7 +46,7 @@
             color: #b9bbbe;
         }
         .config-section {
-            background: rgba(44, 47, 51, 0.9);
+            background: rgba(44,47,51,0.9);
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 20px;
@@ -65,19 +65,14 @@
             margin-bottom: 20px;
         }
         .status-success {
-            background: rgba(59, 165, 92, 0.2);
+            background: rgba(59,165,92,0.2);
             border: 1px solid #3ba55c;
             color: #3ba55c;
         }
         .status-warning {
-            background: rgba(250, 168, 26, 0.2);
+            background: rgba(250,168,26,0.2);
             border: 1px solid #faa81a;
             color: #faa81a;
-        }
-        .status-error {
-            background: rgba(237, 66, 69, 0.2);
-            border: 1px solid #ed4245;
-            color: #ed4245;
         }
         .form-group {
             margin-bottom: 20px;
@@ -96,10 +91,6 @@
             background: #2c2f33;
             color: white;
             font-size: 1rem;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #5865F2;
         }
         select {
             cursor: pointer;
@@ -125,7 +116,6 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
         }
         .btn-primary:hover {
             background: #4752c4;
@@ -139,10 +129,9 @@
             text-decoration: none;
             border-radius: 8px;
             text-align: center;
-            transition: all 0.3s;
         }
         .btn-secondary:hover {
-            background: rgba(88, 101, 242, 0.1);
+            background: rgba(88,101,242,0.1);
         }
         .message {
             padding: 15px;
@@ -151,12 +140,12 @@
             display: none;
         }
         .message.success {
-            background: rgba(59, 165, 92, 0.2);
+            background: rgba(59,165,92,0.2);
             border: 1px solid #3ba55c;
             color: #3ba55c;
         }
         .message.error {
-            background: rgba(237, 66, 69, 0.2);
+            background: rgba(237,66,69,0.2);
             border: 1px solid #ed4245;
             color: #ed4245;
         }
@@ -175,19 +164,11 @@
             100% { transform: rotate(360deg); }
         }
         .info-box {
-            background: rgba(88, 101, 242, 0.1);
+            background: rgba(88,101,242,0.1);
             border-radius: 8px;
             padding: 15px;
             margin-top: 20px;
-            font-size: 0.9rem;
             color: #b9bbbe;
-        }
-        .info-box ul {
-            padding-left: 20px;
-            margin-top: 10px;
-        }
-        .info-box li {
-            margin-bottom: 5px;
         }
         .preview-box {
             background: #2c2f33;
@@ -209,143 +190,111 @@
 
         <div id="message" class="message"></div>
 
-        <!-- ========== ESTADO ACTUAL ========== -->
+        <!-- Estado -->
         <div class="config-section">
-            <h2 class="section-title">📊 Estado del servidor</h2>
-            
+            <h2 class="section-title">📊 Estado</h2>
             <div>
                 {% if credenciales %}
-                    <span class="status-badge status-success">
-                        ✅ Credenciales: {{ credenciales.usuario }}
-                    </span>
+                    <span class="status-badge status-success">✅ Credenciales: {{ credenciales.usuario }}</span>
                 {% else %}
-                    <span class="status-badge status-warning">
-                        ⚠️ Credenciales NO configuradas
-                    </span>
+                    <span class="status-badge status-warning">⚠️ Credenciales no configuradas</span>
                 {% endif %}
-
                 {% if config %}
-                    <span class="status-badge status-success">
-                        ✅ Bot configurado
-                    </span>
+                    <span class="status-badge status-success">✅ Bot configurado</span>
                 {% else %}
-                    <span class="status-badge status-warning">
-                        ⚠️ Bot sin configurar
-                    </span>
+                    <span class="status-badge status-warning">⚠️ Bot sin configurar</span>
                 {% endif %}
             </div>
         </div>
 
-        <!-- ========== SECCIÓN 1: CREDENCIALES ========== -->
+        <!-- Credenciales -->
         <div class="config-section">
             <h2 class="section-title">🔑 Credenciales de Naerzone</h2>
-            
             <div class="form-group">
-                <label>Usuario de Naerzone</label>
-                <input type="text" id="usuario" value="{{ credenciales.usuario if credenciales else '' }}" 
-                       placeholder="Ej: mi_usuario">
+                <label>Usuario</label>
+                <input type="text" id="usuario" value="{{ credenciales.usuario if credenciales else '' }}" placeholder="mi_usuario">
             </div>
-
             <div class="form-group">
-                <label>Contraseña de Naerzone</label>
+                <label>Contraseña</label>
                 <input type="password" id="password" placeholder="••••••••">
                 {% if credenciales %}
-                    <small style="color: #b9bbbe;">(Deja en blanco para mantener la actual)</small>
+                    <small style="color:#b9bbbe;">(Deja en blanco para mantener la actual)</small>
                 {% endif %}
             </div>
-
             <button class="btn-primary" id="btnGuardarCredenciales">
-                {% if credenciales %}
-                    Actualizar credenciales
-                {% else %}
-                    Guardar credenciales
-                {% endif %}
+                {% if credenciales %}Actualizar{% else %}Guardar{% endif %} credenciales
             </button>
         </div>
 
         {% if credenciales %}
-            <!-- ========== SECCIÓN 2: CONFIGURACIÓN (SOLO SI HAY CREDENCIALES) ========== -->
-            <div class="config-section">
-                <h2 class="section-title">⚙️ Configuración del bot</h2>
-                
-                <div class="form-group">
-                    <label>Canal de envío</label>
-                    <select id="canal_id">
-                        <option value="">-- Cargando canales... --</option>
-                    </select>
-                    <small style="color: #b9bbbe;">
-                        📌 Selecciona el canal donde se publicarán las ofertas
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label>Nombre del canal (solo referencia)</label>
-                    <input type="text" id="canal_nombre" value="{{ config.canal_nombre if config else '' }}" 
-                           placeholder="Se actualizará automáticamente" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Hora de envío</label>
-                    <div class="time-group">
-                        <input type="number" id="hora" min="0" max="23" value="{{ config.hora_envio if config else 22 }}" placeholder="HH">
-                        <span style="color: #b9bbbe; align-self: center;">:</span>
-                        <input type="number" id="minuto" min="0" max="59" value="{{ config.minuto_envio if config else 0 }}" placeholder="MM">
-                    </div>
-                    <small style="color: #b9bbbe;">Hora Chile (formato 24h)</small>
-                </div>
-
-                <div class="form-group">
-                    <label>Mensaje personalizado</label>
-                    <textarea id="mensaje" placeholder="@everyone atentos que tenemos promo, joder.">{{ config.mensaje_personalizado if config else '' }}</textarea>
-                    <small style="color: #b9bbbe;">Este mensaje se enviará ANTES de la oferta</small>
-                </div>
-
-                <div class="preview-box" id="vistaPrevia">
-                    <strong>Vista previa:</strong><br>
-                    <span id="previewText">{{ config.mensaje_personalizado if config else '@everyone atentos que tenemos promo, joder.' }}</span>
-                </div>
-
-                <button class="btn-primary" id="btnGuardarConfig" style="margin-top: 20px;">
-                    {% if config %}
-                        Actualizar configuración
-                    {% else %}
-                        Guardar configuración
-                    {% endif %}
-                </button>
+        <!-- Configuración del bot (solo si hay credenciales) -->
+        <div class="config-section">
+            <h2 class="section-title">⚙️ Configuración del bot</h2>
+            
+            <div class="form-group">
+                <label>Canal de envío</label>
+                <select id="canal_id">
+                    <option value="">-- Cargando canales... --</option>
+                </select>
+                <small style="color:#b9bbbe;">Selecciona el canal donde se publicarán las ofertas</small>
             </div>
 
-            <!-- ========== SECCIÓN 3: PRÓXIMO ENVÍO ========== -->
-            {% if config %}
-                <div class="config-section">
-                    <h2 class="section-title">📅 Próximo envío</h2>
-                    {% set ahora = now() %}
-                    {% set proximo = ahora.replace(hour=config.hora_envio, minute=config.minuto_envio, second=0) %}
-                    {% if ahora >= proximo %}
-                        {% set proximo = proximo.replace(day=proximo.day + 1) %}
-                    {% endif %}
-                    <p style="text-align: center; font-size: 1.2rem;">
-                        📢 El bot enviará la próxima oferta el<br>
-                        <strong style="color: #5865F2; font-size: 1.4rem;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }} hrs.</strong>
-                    </p>
+            <div class="form-group">
+                <label>Nombre del canal (referencia)</label>
+                <input type="text" id="canal_nombre" value="{{ config.canal_nombre if config else '' }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Hora de envío (Chile)</label>
+                <div class="time-group">
+                    <input type="number" id="hora" min="0" max="23" value="{{ config.hora_envio if config else 22 }}" placeholder="HH">
+                    <span>:</span>
+                    <input type="number" id="minuto" min="0" max="59" value="{{ config.minuto_envio if config else 0 }}" placeholder="MM">
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Mensaje personalizado (opcional)</label>
+                <textarea id="mensaje" placeholder="@everyone atentos que tenemos promo, joder.">{{ config.mensaje_personalizado if config else '' }}</textarea>
+                <small style="color:#b9bbbe;">Este mensaje se enviará ANTES de la oferta.</small>
+            </div>
+
+            <div class="preview-box" id="vistaPrevia">
+                <strong>Vista previa:</strong><br>
+                <span id="previewText">{{ config.mensaje_personalizado if config else '@everyone atentos que tenemos promo, joder.' }}</span>
+            </div>
+
+            <button class="btn-primary" id="btnGuardarConfig" style="margin-top:20px;">
+                {% if config %}Actualizar{% else %}Guardar{% endif %} configuración
+            </button>
+        </div>
+
+        {% if config %}
+        <!-- Próximo envío -->
+        <div class="config-section">
+            <h2 class="section-title">📅 Próximo envío</h2>
+            {% set ahora = now() %}
+            {% set proximo = ahora.replace(hour=config.hora_envio, minute=config.minuto_envio, second=0) %}
+            {% if ahora >= proximo %}
+                {% set proximo = proximo.replace(day=proximo.day + 1) %}
             {% endif %}
-
-        {% else %}
-            <!-- ========== MENSAJE INFORMATIVO ========== -->
-            <div class="config-section">
-                <div class="info-box">
-                    <p><strong>⚠️ Primero necesitas configurar tus credenciales de Naerzone</strong></p>
-                    <p style="margin-top: 10px;">Una vez que guardes usuario y contraseña, podrás configurar:</p>
-                    <ul style="margin-top: 10px;">
-                        <li>📢 Canal donde se enviarán las ofertas</li>
-                        <li>⏰ Hora de envío diario</li>
-                        <li>💬 Mensaje personalizado</li>
-                    </ul>
-                </div>
-            </div>
+            <p style="text-align:center; font-size:1.2rem;">
+                📢 El bot enviará la próxima oferta el<br>
+                <strong style="color:#5865F2; font-size:1.4rem;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }} hrs.</strong>
+            </p>
+        </div>
         {% endif %}
 
-        <div style="text-align: center; margin-top: 20px;">
+        {% else %}
+        <div class="config-section">
+            <div class="info-box">
+                <p><strong>⚠️ Primero guarda tus credenciales de Naerzone</strong></p>
+                <p>Luego podrás configurar el canal, la hora y el mensaje personalizado.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div style="text-align:center; margin-top:20px;">
             <a href="/dashboard" class="btn-secondary">← Volver al dashboard</a>
         </div>
 
@@ -355,203 +304,120 @@
     <script>
         const guildId = "{{ guild_id }}";
         const guildName = "{{ guild_name }}";
-        
         const messageDiv = document.getElementById('message');
         const loader = document.getElementById('loader');
         const previewText = document.getElementById('previewText');
         const mensajeInput = document.getElementById('mensaje');
 
-        // ========== FUNCIONES AUXILIARES ==========
         function mostrarMensaje(texto, tipo) {
             messageDiv.textContent = texto;
             messageDiv.className = `message ${tipo}`;
             messageDiv.style.display = 'block';
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
+            setTimeout(() => messageDiv.style.display = 'none', 5000);
         }
 
-        // Actualizar vista previa del mensaje
         if (mensajeInput && previewText) {
             mensajeInput.addEventListener('input', function() {
                 previewText.textContent = this.value || '@everyone atentos que tenemos promo, joder.';
             });
         }
 
-        // ========== CARGAR CANALES ==========
+        // Cargar canales
         async function cargarCanales() {
-            const selectCanal = document.getElementById('canal_id');
-            if (!selectCanal) return;
-
+            const select = document.getElementById('canal_id');
+            if (!select) return;
             try {
-                const response = await fetch(`/api/canales/${guildId}`);
-                const data = await response.json();
-                
-                if (data.canales && data.canales.length > 0) {
-                    selectCanal.innerHTML = '<option value="">-- Selecciona un canal --</option>';
-                    
-                    data.canales.forEach(canal => {
+                const res = await fetch(`/api/canales/${guildId}`);
+                const data = await res.json();
+                if (data.canales && data.canales.length) {
+                    select.innerHTML = '<option value="">-- Selecciona un canal --</option>';
+                    data.canales.forEach(c => {
                         const option = document.createElement('option');
-                        option.value = canal.id;
-                        option.textContent = `#${canal.name}`;
-                        
-                        // Seleccionar el canal actual si existe
+                        option.value = c.id;
+                        option.textContent = `#${c.name}`;
                         {% if config and config.canal_id %}
-                            if (canal.id === "{{ config.canal_id }}") {
+                            if (c.id === "{{ config.canal_id }}") {
                                 option.selected = true;
-                                document.getElementById('canal_nombre').value = canal.name;
+                                document.getElementById('canal_nombre').value = c.name;
                             }
                         {% endif %}
-                        
-                        selectCanal.appendChild(option);
+                        select.appendChild(option);
                     });
                 } else {
-                    selectCanal.innerHTML = '<option value="">-- No hay canales disponibles --</option>';
+                    select.innerHTML = '<option value="">-- No hay canales de texto --</option>';
                 }
-            } catch (error) {
-                console.error('Error cargando canales:', error);
-                selectCanal.innerHTML = '<option value="">-- Error cargando canales --</option>';
+            } catch (e) {
+                select.innerHTML = '<option value="">-- Error al cargar --</option>';
             }
         }
 
-        // Actualizar nombre del canal al seleccionar
         const selectCanal = document.getElementById('canal_id');
         if (selectCanal) {
             selectCanal.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                document.getElementById('canal_nombre').value = selectedOption.text.replace('#', '');
+                const opt = this.options[this.selectedIndex];
+                document.getElementById('canal_nombre').value = opt.text.replace('#', '');
             });
-        }
-
-        // ========== GUARDAR CREDENCIALES ==========
-        const btnCredenciales = document.getElementById('btnGuardarCredenciales');
-        if (btnCredenciales) {
-            btnCredenciales.addEventListener('click', async () => {
-                const usuario = document.getElementById('usuario').value;
-                const password = document.getElementById('password').value;
-
-                if (!usuario) {
-                    mostrarMensaje('❌ El usuario es obligatorio', 'error');
-                    return;
-                }
-
-                {% if not credenciales %}
-                    if (!password) {
-                        mostrarMensaje('❌ La contraseña es obligatoria', 'error');
-                        return;
-                    }
-                {% endif %}
-
-                loader.style.display = 'block';
-
-                try {
-                    // Verificar si hay password nuevo
-                    if (password) {
-                        const verifyRes = await fetch('/api/verificar-credenciales', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ usuario, password })
-                        });
-                        const verifyData = await verifyRes.json();
-
-                        if (!verifyData.valido) {
-                            throw new Error('Credenciales inválidas');
-                        }
-                    }
-
-                    // Guardar
-                    const saveRes = await fetch('/api/guardar-credenciales', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            guild_id: guildId,
-                            guild_name: guildName,
-                            usuario,
-                            password: password || undefined
-                        })
-                    });
-                    const saveData = await saveRes.json();
-
-                    if (!saveData.exito) {
-                        throw new Error(saveData.error || 'Error al guardar');
-                    }
-
-                    mostrarMensaje('✅ Credenciales guardadas', 'success');
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                    
-                } catch (error) {
-                    mostrarMensaje(`❌ ${error.message}`, 'error');
-                } finally {
-                    loader.style.display = 'none';
-                }
-            });
-        }
-
-        // ========== GUARDAR CONFIGURACIÓN ==========
-        const btnConfig = document.getElementById('btnGuardarConfig');
-        if (btnConfig) {
-            btnConfig.addEventListener('click', async () => {
-                const canalId = document.getElementById('canal_id').value;
-                const canalNombre = document.getElementById('canal_nombre').value;
-                const hora = parseInt(document.getElementById('hora').value);
-                const minuto = parseInt(document.getElementById('minuto').value);
-                const mensaje = document.getElementById('mensaje').value;
-
-                if (!canalId) {
-                    mostrarMensaje('❌ Selecciona un canal', 'error');
-                    return;
-                }
-
-                if (isNaN(hora) || hora < 0 || hora > 23 || isNaN(minuto) || minuto < 0 || minuto > 59) {
-                    mostrarMensaje('❌ Hora inválida', 'error');
-                    return;
-                }
-
-                loader.style.display = 'block';
-
-                try {
-                    const saveRes = await fetch('/api/guardar-config', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            guild_id: guildId,
-                            canal_id: canalId,
-                            canal_nombre: canalNombre,
-                            hora,
-                            minuto,
-                            mensaje_personalizado: mensaje || null
-                        })
-                    });
-                    
-                    const saveData = await saveRes.json();
-                    console.log('Respuesta guardado:', saveData);
-
-                    if (!saveData.exito) {
-                        throw new Error(saveData.error || 'Error al guardar configuración');
-                    }
-
-                    mostrarMensaje('✅ Configuración guardada', 'success');
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    mostrarMensaje(`❌ ${error.message}`, 'error');
-                } finally {
-                    loader.style.display = 'none';
-                }
-            });
-        }
-
-        // Cargar canales al inicio si la sección existe
-        if (document.getElementById('canal_id')) {
             cargarCanales();
         }
+
+        // Guardar credenciales
+        document.getElementById('btnGuardarCredenciales')?.addEventListener('click', async () => {
+            const usuario = document.getElementById('usuario').value;
+            const password = document.getElementById('password').value;
+            if (!usuario) return mostrarMensaje('❌ El usuario es obligatorio', 'error');
+            {% if not credenciales %}
+                if (!password) return mostrarMensaje('❌ La contraseña es obligatoria', 'error');
+            {% endif %}
+            loader.style.display = 'block';
+            try {
+                if (password) {
+                    const v = await fetch('/api/verificar-credenciales', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({usuario, password})
+                    }).then(r=>r.json());
+                    if (!v.valido) throw new Error('Credenciales inválidas');
+                }
+                const r = await fetch('/api/guardar-credenciales', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({guild_id:guildId, guild_name:guildName, usuario, password: password || undefined})
+                }).then(r=>r.json());
+                if (!r.exito) throw new Error(r.error || 'Error al guardar');
+                mostrarMensaje('✅ Credenciales guardadas', 'success');
+                setTimeout(() => location.reload(), 2000);
+            } catch(e) {
+                mostrarMensaje(`❌ ${e.message}`, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        // Guardar configuración
+        document.getElementById('btnGuardarConfig')?.addEventListener('click', async () => {
+            const canalId = document.getElementById('canal_id').value;
+            const canalNombre = document.getElementById('canal_nombre').value;
+            const hora = parseInt(document.getElementById('hora').value);
+            const minuto = parseInt(document.getElementById('minuto').value);
+            const mensaje = document.getElementById('mensaje').value;
+
+            if (!canalId) return mostrarMensaje('❌ Selecciona un canal', 'error');
+            if (isNaN(hora) || hora<0 || hora>23 || isNaN(minuto) || minuto<0 || minuto>59)
+                return mostrarMensaje('❌ Hora inválida', 'error');
+
+            loader.style.display = 'block';
+            try {
+                const r = await fetch('/api/guardar-config', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({guild_id:guildId, canal_id:canalId, canal_nombre:canalNombre, hora, minuto, mensaje_personalizado:mensaje})
+                }).then(r=>r.json());
+                if (!r.exito) throw new Error(r.error || 'Error al guardar');
+                mostrarMensaje('✅ Configuración guardada', 'success');
+                setTimeout(() => location.reload(), 2000);
+            } catch(e) {
+                mostrarMensaje(`❌ ${e.message}`, 'error');
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
