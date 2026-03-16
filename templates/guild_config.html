@@ -101,6 +101,9 @@
             outline: none;
             border-color: #5865F2;
         }
+        select {
+            cursor: pointer;
+        }
         textarea {
             min-height: 100px;
             resize: vertical;
@@ -186,10 +189,12 @@
         .info-box li {
             margin-bottom: 5px;
         }
-        .section-divider {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #5865F2, transparent);
-            margin: 30px 0;
+        .preview-box {
+            background: #2c2f33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #40444b;
         }
     </style>
 </head>
@@ -208,28 +213,30 @@
         <div class="config-section">
             <h2 class="section-title">📊 Estado del servidor</h2>
             
-            {% if credenciales %}
-                <div class="status-badge status-success">
-                    ✅ Credenciales de Naerzone configuradas ({{ credenciales.usuario }})
-                </div>
-            {% else %}
-                <div class="status-badge status-warning">
-                    ⚠️ Credenciales de Naerzone NO configuradas
-                </div>
-            {% endif %}
+            <div>
+                {% if credenciales %}
+                    <span class="status-badge status-success">
+                        ✅ Credenciales: {{ credenciales.usuario }}
+                    </span>
+                {% else %}
+                    <span class="status-badge status-warning">
+                        ⚠️ Credenciales NO configuradas
+                    </span>
+                {% endif %}
 
-            {% if config %}
-                <div class="status-badge status-success" style="margin-left: 10px;">
-                    ✅ Bot configurado (Canal: {{ config.canal_nombre or 'ID: ' + config.canal_id }})
-                </div>
-            {% else %}
-                <div class="status-badge status-warning" style="margin-left: 10px;">
-                    ⚠️ Bot sin configuración de canal/hora
-                </div>
-            {% endif %}
+                {% if config %}
+                    <span class="status-badge status-success">
+                        ✅ Bot configurado
+                    </span>
+                {% else %}
+                    <span class="status-badge status-warning">
+                        ⚠️ Bot sin configurar
+                    </span>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- ========== SECCIÓN 1: CREDENCIALES DE NAERZONE ========== -->
+        <!-- ========== SECCIÓN 1: CREDENCIALES ========== -->
         <div class="config-section">
             <h2 class="section-title">🔑 Credenciales de Naerzone</h2>
             
@@ -257,24 +264,24 @@
         </div>
 
         {% if credenciales %}
-            <!-- ========== SECCIÓN 2: CONFIGURACIÓN DEL BOT (SOLO SI HAY CREDENCIALES) ========== -->
+            <!-- ========== SECCIÓN 2: CONFIGURACIÓN (SOLO SI HAY CREDENCIALES) ========== -->
             <div class="config-section">
                 <h2 class="section-title">⚙️ Configuración del bot</h2>
                 
                 <div class="form-group">
-                    <label>ID del canal de envío</label>
-                    <input type="text" id="canal_id" value="{{ config.canal_id if config else '' }}" 
-                           placeholder="Ej: 123456789012345678">
+                    <label>Canal de envío</label>
+                    <select id="canal_id">
+                        <option value="">-- Cargando canales... --</option>
+                    </select>
                     <small style="color: #b9bbbe;">
-                        📌 Cómo obtener el ID del canal: 
-                        <span style="color: #5865F2;">Ajustes de Discord → Modo desarrollador → Click derecho en canal → Copiar ID</span>
+                        📌 Selecciona el canal donde se publicarán las ofertas
                     </small>
                 </div>
 
                 <div class="form-group">
-                    <label>Nombre del canal (opcional, solo referencia)</label>
+                    <label>Nombre del canal (solo referencia)</label>
                     <input type="text" id="canal_nombre" value="{{ config.canal_nombre if config else '' }}" 
-                           placeholder="Ej: ofertas-naerzone">
+                           placeholder="Se actualizará automáticamente" readonly>
                 </div>
 
                 <div class="form-group">
@@ -284,33 +291,45 @@
                         <span style="color: #b9bbbe; align-self: center;">:</span>
                         <input type="number" id="minuto" min="0" max="59" value="{{ config.minuto_envio if config else 0 }}" placeholder="MM">
                     </div>
-                    <small style="color: #b9bbbe;">Hora en formato 24h (ej: 22:30 para las 10:30 PM Chile)</small>
+                    <small style="color: #b9bbbe;">Hora Chile (formato 24h)</small>
                 </div>
 
                 <div class="form-group">
-                    <label>Mensaje personalizado (opcional)</label>
+                    <label>Mensaje personalizado</label>
                     <textarea id="mensaje" placeholder="@everyone atentos que tenemos promo, joder.">{{ config.mensaje_personalizado if config else '' }}</textarea>
-                    <small style="color: #b9bbbe;">
-                        Este mensaje se enviará ANTES de la oferta. Puedes usar @everyone, @here, etc.<br>
-                        Si lo dejas vacío, se usará el mensaje por defecto.
-                    </small>
+                    <small style="color: #b9bbbe;">Este mensaje se enviará ANTES de la oferta</small>
                 </div>
 
-                <button class="btn-primary" id="btnGuardarConfig">
+                <div class="preview-box" id="vistaPrevia">
+                    <strong>Vista previa:</strong><br>
+                    <span id="previewText">{{ config.mensaje_personalizado if config else '@everyone atentos que tenemos promo, joder.' }}</span>
+                </div>
+
+                <button class="btn-primary" id="btnGuardarConfig" style="margin-top: 20px;">
                     {% if config %}
                         Actualizar configuración
                     {% else %}
                         Guardar configuración
                     {% endif %}
                 </button>
+            </div>
 
-                <div class="info-box">
-                    <p><strong>📌 Vista previa del mensaje completo:</strong></p>
-                    <p id="vistaPrevia" style="background: #2c2f33; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                        @everyone atentos que tenemos promo, joder.
+            <!-- ========== SECCIÓN 3: PRÓXIMO ENVÍO ========== -->
+            {% if config %}
+                <div class="config-section">
+                    <h2 class="section-title">📅 Próximo envío</h2>
+                    {% set ahora = now() %}
+                    {% set proximo = ahora.replace(hour=config.hora_envio, minute=config.minuto_envio, second=0) %}
+                    {% if ahora >= proximo %}
+                        {% set proximo = proximo.replace(day=proximo.day + 1) %}
+                    {% endif %}
+                    <p style="text-align: center; font-size: 1.2rem;">
+                        📢 El bot enviará la próxima oferta el<br>
+                        <strong style="color: #5865F2; font-size: 1.4rem;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }} hrs.</strong>
                     </p>
                 </div>
-            </div>
+            {% endif %}
+
         {% else %}
             <!-- ========== MENSAJE INFORMATIVO ========== -->
             <div class="config-section">
@@ -320,29 +339,8 @@
                     <ul style="margin-top: 10px;">
                         <li>📢 Canal donde se enviarán las ofertas</li>
                         <li>⏰ Hora de envío diario</li>
-                        <li>💬 Mensaje personalizado (opcional)</li>
+                        <li>💬 Mensaje personalizado</li>
                     </ul>
-                </div>
-            </div>
-        {% endif %}
-
-        <!-- ========== VISTA PREVIA DEL PRÓXIMO ENVÍO ========== -->
-        {% if config and credenciales %}
-            <div class="config-section">
-                <h2 class="section-title">📅 Próximo envío</h2>
-                <div style="text-align: center; padding: 20px;">
-                    {% set ahora = now() %}
-                    {% set proximo = ahora.replace(hour=config.hora_envio, minute=config.minuto_envio, second=0) %}
-                    {% if ahora >= proximo %}
-                        {% set proximo = proximo.replace(day=proximo.day + 1) %}
-                    {% endif %}
-                    <p style="font-size: 1.2rem;">
-                        📢 El bot enviará la próxima oferta el 
-                        <strong style="color: #5865F2;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }} hrs.</strong>
-                    </p>
-                    <p style="color: #b9bbbe; margin-top: 10px;">
-                        (hora de Chile)
-                    </p>
                 </div>
             </div>
         {% endif %}
@@ -360,9 +358,10 @@
         
         const messageDiv = document.getElementById('message');
         const loader = document.getElementById('loader');
-        const vistaPrevia = document.getElementById('vistaPrevia');
+        const previewText = document.getElementById('previewText');
         const mensajeInput = document.getElementById('mensaje');
 
+        // ========== FUNCIONES AUXILIARES ==========
         function mostrarMensaje(texto, tipo) {
             messageDiv.textContent = texto;
             messageDiv.className = `message ${tipo}`;
@@ -373,13 +372,58 @@
         }
 
         // Actualizar vista previa del mensaje
-        if (mensajeInput && vistaPrevia) {
+        if (mensajeInput && previewText) {
             mensajeInput.addEventListener('input', function() {
-                vistaPrevia.textContent = this.value || '@everyone atentos que tenemos promo, joder.';
+                previewText.textContent = this.value || '@everyone atentos que tenemos promo, joder.';
             });
         }
 
-        // ========== CREDENCIALES ==========
+        // ========== CARGAR CANALES ==========
+        async function cargarCanales() {
+            const selectCanal = document.getElementById('canal_id');
+            if (!selectCanal) return;
+
+            try {
+                const response = await fetch(`/api/canales/${guildId}`);
+                const data = await response.json();
+                
+                if (data.canales && data.canales.length > 0) {
+                    selectCanal.innerHTML = '<option value="">-- Selecciona un canal --</option>';
+                    
+                    data.canales.forEach(canal => {
+                        const option = document.createElement('option');
+                        option.value = canal.id;
+                        option.textContent = `#${canal.name}`;
+                        
+                        // Seleccionar el canal actual si existe
+                        {% if config and config.canal_id %}
+                            if (canal.id === "{{ config.canal_id }}") {
+                                option.selected = true;
+                                document.getElementById('canal_nombre').value = canal.name;
+                            }
+                        {% endif %}
+                        
+                        selectCanal.appendChild(option);
+                    });
+                } else {
+                    selectCanal.innerHTML = '<option value="">-- No hay canales disponibles --</option>';
+                }
+            } catch (error) {
+                console.error('Error cargando canales:', error);
+                selectCanal.innerHTML = '<option value="">-- Error cargando canales --</option>';
+            }
+        }
+
+        // Actualizar nombre del canal al seleccionar
+        const selectCanal = document.getElementById('canal_id');
+        if (selectCanal) {
+            selectCanal.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                document.getElementById('canal_nombre').value = selectedOption.text.replace('#', '');
+            });
+        }
+
+        // ========== GUARDAR CREDENCIALES ==========
         const btnCredenciales = document.getElementById('btnGuardarCredenciales');
         if (btnCredenciales) {
             btnCredenciales.addEventListener('click', async () => {
@@ -391,7 +435,6 @@
                     return;
                 }
 
-                // Si no hay credenciales previas, password es obligatorio
                 {% if not credenciales %}
                     if (!password) {
                         mostrarMensaje('❌ La contraseña es obligatoria', 'error');
@@ -402,7 +445,7 @@
                 loader.style.display = 'block';
 
                 try {
-                    // Si hay password, verificamos
+                    // Verificar si hay password nuevo
                     if (password) {
                         const verifyRes = await fetch('/api/verificar-credenciales', {
                             method: 'POST',
@@ -424,7 +467,7 @@
                             guild_id: guildId,
                             guild_name: guildName,
                             usuario,
-                            password: password || undefined  // Si está vacío, no enviamos (para mantener la actual)
+                            password: password || undefined
                         })
                     });
                     const saveData = await saveRes.json();
@@ -433,9 +476,8 @@
                         throw new Error(saveData.error || 'Error al guardar');
                     }
 
-                    mostrarMensaje('✅ Credenciales guardadas correctamente', 'success');
+                    mostrarMensaje('✅ Credenciales guardadas', 'success');
                     
-                    // Recargar después de 2 segundos para mostrar la nueva sección
                     setTimeout(() => {
                         location.reload();
                     }, 2000);
@@ -448,7 +490,7 @@
             });
         }
 
-        // ========== CONFIGURACIÓN ==========
+        // ========== GUARDAR CONFIGURACIÓN ==========
         const btnConfig = document.getElementById('btnGuardarConfig');
         if (btnConfig) {
             btnConfig.addEventListener('click', async () => {
@@ -459,12 +501,12 @@
                 const mensaje = document.getElementById('mensaje').value;
 
                 if (!canalId) {
-                    mostrarMensaje('❌ El ID del canal es obligatorio', 'error');
+                    mostrarMensaje('❌ Selecciona un canal', 'error');
                     return;
                 }
 
                 if (isNaN(hora) || hora < 0 || hora > 23 || isNaN(minuto) || minuto < 0 || minuto > 59) {
-                    mostrarMensaje('❌ Hora inválida (debe ser 0-23 horas y 0-59 minutos)', 'error');
+                    mostrarMensaje('❌ Hora inválida', 'error');
                     return;
                 }
 
@@ -483,25 +525,32 @@
                             mensaje_personalizado: mensaje || null
                         })
                     });
+                    
                     const saveData = await saveRes.json();
+                    console.log('Respuesta guardado:', saveData);
 
                     if (!saveData.exito) {
-                        throw new Error('Error al guardar configuración');
+                        throw new Error(saveData.error || 'Error al guardar configuración');
                     }
 
-                    mostrarMensaje('✅ Configuración guardada correctamente', 'success');
+                    mostrarMensaje('✅ Configuración guardada', 'success');
                     
-                    // Recargar después de 2 segundos
                     setTimeout(() => {
                         location.reload();
                     }, 2000);
                     
                 } catch (error) {
+                    console.error('Error:', error);
                     mostrarMensaje(`❌ ${error.message}`, 'error');
                 } finally {
                     loader.style.display = 'none';
                 }
             });
+        }
+
+        // Cargar canales al inicio si la sección existe
+        if (document.getElementById('canal_id')) {
+            cargarCanales();
         }
     </script>
 </body>
