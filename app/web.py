@@ -104,6 +104,9 @@ def init_api_routes(app):
         minuto = data.get('minuto', 0)
         mensaje = data.get('mensaje_personalizado')
         
+        hora_actual = datetime.now(chile_tz).strftime('%H:%M:%S')
+        logger.info(f"🔥 RECIBIDA PETICIÓN DE GUARDAR CONFIG a las {hora_actual} para guild {guild_id}")
+        
         if not guild_id or not canal_id:
             return jsonify({'exito': False, 'error': 'Faltan datos'})
         
@@ -122,17 +125,23 @@ def init_api_routes(app):
             db.guardar_config(guild_id, canal_id, '', hora, minuto, mensaje)
         )
         
-        # ========== LLAMADA A REPROGRAMACIÓN CON TRY/EXCEPT ==========
         if resultado:
+            logger.info(f"✅ Configuración guardada para {guild_id}")
             try:
-                from keep_alive import reprogramar_servidor
-                # Ejecutar reprogramación pero NO detener el flujo si falla
-                asyncio.create_task(reprogramar_servidor(guild_id))
-                logger.info(f"🔄 Tarea de reprogramación iniciada para {guild_id}")
+                from keep_alive import bot
+                if bot:
+                    # Crear tarea en el loop del bot
+                    asyncio.run_coroutine_threadsafe(
+                        bot.reprogramar_ahora(guild_id),
+                        bot.loop
+                    )
+                    logger.info(f"⚡ Tarea de reprogramación INMEDIATA enviada para {guild_id}")
+                else:
+                    logger.warning("⚠️ Bot no disponible para reprogramar")
             except Exception as e:
-                logger.error(f"❌ Error al iniciar reprogramación: {e}")
-                # El bot sigue funcionando aunque falle la reprogramación
-        # ============================================================
+                logger.error(f"❌ Error en reprogramación: {e}")
+        else:
+            logger.error(f"❌ Falló el guardado para {guild_id}")
         
         loop.close()
         return jsonify({'exito': resultado})
