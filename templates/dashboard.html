@@ -325,8 +325,11 @@
                                     ⚙️ Configurar
                                 </a>
                             {% else %}
+                                <!-- MODIFICADO: El enlace ahora abre en ventana nueva y recarga al cerrar -->
                                 <a href="https://discord.com/api/oauth2/authorize?client_id=1482678516267876435&permissions=274878024704&scope=bot&guild_id={{ guild.id }}" 
-                                   class="btn-invite" target="_blank">
+                                   class="btn-invite" 
+                                   target="_blank"
+                                   onclick="invitarYRecargar(event, this.href)">
                                     ➕ Invitar bot
                                 </a>
                                 <span class="btn-config disabled">⚙️ Configurar</span>
@@ -355,5 +358,24 @@
             </a>
         </div>
     </div>
+
+    <!-- Script para recargar al cerrar la ventana de invitación -->
+    <script>
+    function invitarYRecargar(event, url) {
+        event.preventDefault();
+        
+        // Abrir la ventana de invitación
+        const ventana = window.open(url, '_blank', 'width=800,height=600');
+        
+        // Verificar cada segundo si la ventana se cerró
+        const intervalo = setInterval(() => {
+            if (ventana.closed) {
+                clearInterval(intervalo);
+                // Recargar el dashboard para actualizar el estado
+                location.reload();
+            }
+        }, 1000);
+    }
+    </script>
 </body>
 </html>
