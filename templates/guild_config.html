@@ -29,12 +29,12 @@
             color: #5865F2;
         }
         .server-header {
-            background: rgba(88,101,242,0.1);
+            background: rgba(88, 101, 242, 0.1);
             padding: 20px;
             border-radius: 15px;
             text-align: center;
             margin-bottom: 30px;
-            border: 1px solid rgba(88,101,242,0.3);
+            border: 1px solid rgba(88, 101, 242, 0.3);
         }
         .server-name {
             font-size: 1.5rem;
@@ -46,7 +46,7 @@
             color: #b9bbbe;
         }
         .config-section {
-            background: rgba(44,47,51,0.9);
+            background: rgba(44, 47, 51, 0.9);
             border-radius: 15px;
             padding: 30px;
             margin-bottom: 20px;
@@ -66,12 +66,12 @@
             margin-right: 10px;
         }
         .status-success {
-            background: rgba(59,165,92,0.2);
+            background: rgba(59, 165, 92, 0.2);
             border: 1px solid #3ba55c;
             color: #3ba55c;
         }
         .status-warning {
-            background: rgba(250,168,26,0.2);
+            background: rgba(250, 168, 26, 0.2);
             border: 1px solid #faa81a;
             color: #faa81a;
         }
@@ -132,7 +132,7 @@
             text-align: center;
         }
         .btn-secondary:hover {
-            background: rgba(88,101,242,0.1);
+            background: rgba(88, 101, 242, 0.1);
         }
         .message {
             padding: 15px;
@@ -141,12 +141,12 @@
             display: none;
         }
         .message.success {
-            background: rgba(59,165,92,0.2);
+            background: rgba(59, 165, 92, 0.2);
             border: 1px solid #3ba55c;
             color: #3ba55c;
         }
         .message.error {
-            background: rgba(237,66,69,0.2);
+            background: rgba(237, 66, 69, 0.2);
             border: 1px solid #ed4245;
             color: #ed4245;
         }
@@ -221,7 +221,7 @@
         </div>
 
         {% if credenciales %}
-        <!-- Configuración del bot -->
+        <!-- Configuración del bot (solo si hay credenciales) -->
         <div class="config-section">
             <h2 class="section-title">⚙️ Configuración del bot</h2>
             
@@ -242,8 +242,9 @@
             </div>
 
             <div class="form-group">
-                <label>Mensaje personalizado</label>
+                <label>Mensaje personalizado (opcional)</label>
                 <textarea id="mensaje" placeholder="@everyone atentos que tenemos promo, joder.">{{ config.mensaje_personalizado if config else '' }}</textarea>
+                <small style="color:#b9bbbe;">Este mensaje se enviará ANTES de la oferta.</small>
             </div>
 
             <div class="preview-box">
@@ -265,10 +266,20 @@
             {% if ahora >= proximo %}
                 {% set proximo = proximo.replace(day=proximo.day + 1) %}
             {% endif %}
-            <p style="text-align:center;">📢 El bot enviará la próxima oferta el <strong style="color:#5865F2;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }}</strong> hrs.</p>
+            <p style="text-align:center; font-size:1.2rem;">
+                📢 El bot enviará la próxima oferta el<br>
+                <strong style="color:#5865F2;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }} hrs.</strong>
+            </p>
         </div>
         {% endif %}
 
+        {% else %}
+        <!-- Mensaje si no hay credenciales -->
+        <div class="config-section">
+            <div class="info-box" style="background: rgba(88,101,242,0.1); padding:20px; border-radius:8px;">
+                <p style="color:#b9bbbe;">⚠️ Primero guarda tus credenciales de Naerzone para poder configurar el canal y la hora.</p>
+            </div>
+        </div>
         {% endif %}
 
         <div style="text-align:center;">
@@ -280,6 +291,7 @@
 
     <script>
         const guildId = "{{ guild_id }}";
+        const guildName = "{{ guild_name }}";
         const messageDiv = document.getElementById('message');
         const loader = document.getElementById('loader');
         const previewText = document.getElementById('previewText');
@@ -345,7 +357,7 @@
                 }
                 const r = await fetch('/api/guardar-credenciales', {
                     method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({guild_id:guildId, guild_name:'', usuario, password: password || undefined})
+                    body: JSON.stringify({guild_id:guildId, guild_name:guildName, usuario, password: password || undefined})
                 }).then(r=>r.json());
                 if (!r.exito) throw new Error(r.error || 'Error al guardar');
                 mostrarMensaje('✅ Credenciales guardadas', 'success');
