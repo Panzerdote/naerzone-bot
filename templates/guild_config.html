@@ -338,63 +338,60 @@
         }
 
         document.getElementById('btnGuardarCredenciales')?.addEventListener('click', async () => {
-            const usuario = document.getElementById('usuario').value;
-            const password = document.getElementById('password').value;
+    const usuario = document.getElementById('usuario').value;
+    const password = document.getElementById('password').value;
 
-            if (!usuario) return mostrarMensaje('❌ El usuario es obligatorio', 'error');
-            {% if not credenciales %}
-                if (!password) return mostrarMensaje('❌ La contraseña es obligatoria', 'error');
-            {% endif %}
+    if (!usuario) return mostrarMensaje('❌ El usuario es obligatorio', 'error');
+    {% if not credenciales %}
+        if (!password) return mostrarMensaje('❌ La contraseña es obligatoria', 'error');
+    {% endif %}
 
-            loader.style.display = 'block';
-            try {
-                if (password) {
-                    const v = await fetch('/api/verificar-credenciales', {
-                        method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({usuario, password})
-                    }).then(r=>r.json());
-                    if (!v.valido) throw new Error('Credenciales inválidas');
-                }
-                const r = await fetch('/api/guardar-credenciales', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({guild_id:guildId, guild_name:guildName, usuario, password: password || undefined})
-                }).then(r=>r.json());
-                if (!r.exito) throw new Error(r.error || 'Error al guardar');
-                mostrarMensaje('✅ Credenciales guardadas', 'success');
-                setTimeout(() => location.reload(), 2000);
-            } catch(e) {
-                mostrarMensaje(`❌ ${e.message}`, 'error');
-            } finally {
-                loader.style.display = 'none';
-            }
-        });
+    loader.style.display = 'block';
+    try {
+        // 🎯 ELIMINAMOS LA VERIFICACIÓN - Guardamos directamente
+        const r = await fetch('/api/guardar-credenciales', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({guild_id: guildId, guild_name: guildName, usuario, password: password || undefined})
+        }).then(r => r.json());
+        
+        if (!r.exito) throw new Error(r.error || 'Error al guardar');
+        
+        // Mensaje más claro para el usuario
+        mostrarMensaje('✅ Credenciales guardadas. El bot verificará al enviar la oferta.', 'success');
+        setTimeout(() => location.reload(), 2000);
+    } catch(e) {
+        mostrarMensaje(`❌ ${e.message}`, 'error');
+    } finally {
+        loader.style.display = 'none';
+    }
+});
 
-        document.getElementById('btnGuardarConfig')?.addEventListener('click', async () => {
-            const canalId = document.getElementById('canal_id').value;
-            const hora = parseInt(document.getElementById('hora').value);
-            const minuto = parseInt(document.getElementById('minuto').value);
-            const mensaje = document.getElementById('mensaje').value;
+document.getElementById('btnGuardarConfig')?.addEventListener('click', async () => {
+    const canalId = document.getElementById('canal_id').value;
+    const hora = parseInt(document.getElementById('hora').value);
+    const minuto = parseInt(document.getElementById('minuto').value);
+    const mensaje = document.getElementById('mensaje').value;
 
-            if (!canalId) return mostrarMensaje('❌ Selecciona un canal', 'error');
-            if (isNaN(hora) || hora<0 || hora>23 || isNaN(minuto) || minuto<0 || minuto>59)
-                return mostrarMensaje('❌ Hora inválida', 'error');
+    if (!canalId) return mostrarMensaje('❌ Selecciona un canal', 'error');
+    if (isNaN(hora) || hora<0 || hora>23 || isNaN(minuto) || minuto<0 || minuto>59)
+        return mostrarMensaje('❌ Hora inválida', 'error');
 
-            loader.style.display = 'block';
-            try {
-                const r = await fetch('/api/guardar-config', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({guild_id:guildId, canal_id:canalId, hora, minuto, mensaje_personalizado:mensaje})
-                }).then(r=>r.json());
-                if (!r.exito) throw new Error(r.error || 'Error al guardar');
-                mostrarMensaje('✅ Configuración guardada', 'success');
-                setTimeout(() => location.reload(), 2000);
-            } catch(e) {
-                mostrarMensaje(`❌ ${e.message}`, 'error');
-            } finally {
-                loader.style.display = 'none';
-            }
-        });
-
+    loader.style.display = 'block';
+    try {
+        const r = await fetch('/api/guardar-config', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({guild_id: guildId, canal_id: canalId, hora, minuto, mensaje_personalizado: mensaje})
+        }).then(r => r.json());
+        
+        if (!r.exito) throw new Error(r.error || 'Error al guardar');
+        mostrarMensaje('✅ Configuración guardada', 'success');
+        setTimeout(() => location.reload(), 2000);
+    } catch(e) {
+        mostrarMensaje(`❌ ${e.message}`, 'error');
+    } finally {
+        loader.style.display = 'none';
+    }
+});
         if (document.getElementById('canal_id')) cargarCanales();
     </script>
 </body>
