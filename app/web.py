@@ -1,3 +1,4 @@
+# app/web.py
 from flask import request, jsonify
 import logging
 from database import Database
@@ -20,16 +21,45 @@ HEADERS = {
 BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 chile_tz = pytz.timezone('America/Santiago')
 
+# ========== FUNCIÓN CORREGIDA CON LOGS ==========
 def verificar_credenciales_naerzone(usuario, password):
+    """Verifica credenciales con Naerzone"""
     try:
+        logger.info(f"🔐 Verificando credenciales para usuario: {usuario}")
+        
         session = requests.Session()
-        session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
+        
+        # Paso 1: Visitar la página de login
+        logger.info(f"📡 Visitando página de login...")
+        login_page = session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
+        logger.info(f"   Status code: {login_page.status_code}")
+        
+        # Paso 2: Enviar credenciales
         payload = {'nombre': usuario, 'password': password}
+        logger.info(f"📤 Enviando payload a {LOGIN_URL}")
+        
         response = session.post(LOGIN_URL, data=payload, headers=HEADERS, timeout=10)
-        return response.text == "OK"
-    except Exception as e:
-        logger.error(f"Error verificando credenciales: {e}")
+        logger.info(f"   Status code: {response.status_code}")
+        logger.info(f"   Respuesta: '{response.text}'")
+        
+        if response.text == "OK":
+            logger.info(f"✅ Credenciales válidas para {usuario}")
+            return True
+        else:
+            logger.warning(f"❌ Credenciales inválidas para {usuario}")
+            logger.warning(f"   Respuesta completa: {response.text[:200]}")
+            return False
+            
+    except requests.Timeout:
+        logger.error(f"⏰ Timeout al verificar credenciales para {usuario}")
         return False
+    except requests.ConnectionError:
+        logger.error(f"🔌 Error de conexión al verificar credenciales para {usuario}")
+        return False
+    except Exception as e:
+        logger.error(f"💥 Error inesperado verificando credenciales: {e}")
+        return False
+# =================================================
 
 async def obtener_canales_discord(guild_id):
     try:
