@@ -258,51 +258,17 @@
         </div>
 
         {% if config %}
-        <!-- SECCIÓN 3: PRÓXIMO ENVÍO (MEJORADA) -->
+        <!-- Próximo envío -->
         <div class="config-section">
             <h2 class="section-title">📅 Próximo envío</h2>
-            
             {% set ahora = now() %}
             {% set proximo = ahora.replace(hour=config.hora_envio, minute=config.minuto_envio, second=0) %}
             {% if ahora >= proximo %}
                 {% set proximo = proximo.replace(day=proximo.day + 1) %}
             {% endif %}
-            
-            <!-- Tarjeta de información estilo tabla -->
-            <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 20px; margin-top: 10px;">
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #40444b;">
-                    <span style="color: #b9bbbe;">📢 Canal:</span>
-                    <span style="color: white; font-weight: 500;">
-                        {% if config.canal_nombre %}
-                            #{{ config.canal_nombre }}
-                        {% else %}
-                            ID: {{ config.canal_id }}
-                        {% endif %}
-                    </span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #40444b;">
-                    <span style="color: #b9bbbe;">📅 Fecha:</span>
-                    <span style="color: white; font-weight: 500;">{{ proximo.strftime('%d/%m/%Y') }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #40444b;">
-                    <span style="color: #b9bbbe;">⏰ Hora:</span>
-                    <span style="color: white; font-weight: 500;">{{ '%02d'|format(config.hora_envio) }}:{{ '%02d'|format(config.minuto_envio) }} hrs.</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0;">
-                    <span style="color: #b9bbbe;">💬 Mensaje personalizado:</span>
-                    <span style="color: white; font-weight: 500;">
-                        {% if config.mensaje_personalizado %}
-                            ✅ Sí
-                        {% else %}
-                            ❌ No
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
-            
-            <!-- Texto adicional opcional -->
-            <p style="text-align:center; color: #5865F2; margin-top: 15px; font-size:0.9rem;">
-                (Hora de Chile)
+            <p style="text-align:center; font-size:1.2rem;">
+                📢 El bot enviará la próxima oferta el<br>
+                <strong style="color:#5865F2;">{{ proximo.strftime('%d/%m/%Y a las %H:%M') }} hrs.</strong>
             </p>
         </div>
         {% endif %}
@@ -316,15 +282,11 @@
         </div>
         {% endif %}
 
-        <!-- Botón para volver al dashboard -->
         <div style="text-align:center;">
             <a href="/dashboard" class="btn-secondary">← Volver al dashboard</a>
         </div>
 
-        <!-- LOADER MEJORADO: más visible y centrado -->
-        <div style="display: flex; justify-content: center; margin-top: 30px;">
-            <div class="loader" id="loader"></div>
-        </div>
+        <div class="loader" id="loader"></div>
     </div>
 
     <script>
