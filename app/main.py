@@ -115,7 +115,7 @@ def extraer_icono_wowhead(wowhead_url):
         logger.error(f"Error en icono: {e}")
         return None
 
-# ========== FUNCIÓN LOGIN WEB MODIFICADA (USA DESENCRIPTADO) ==========
+# ========== FUNCIÓN LOGIN WEB SIMPLE ==========
 def login_web(usuario, password):
     """
     Inicia sesión en Naerzone.
@@ -138,7 +138,7 @@ def login_web(usuario, password):
     except Exception as e:
         logger.error(f"Error en login_web: {e}")
         return None, False
-# =====================================================================
+# ==============================================
 
 def extraer_promocion(session):
     try:
@@ -270,7 +270,7 @@ class NaerzoneBot(commands.Bot):
     async def on_ready(self):
         logger.info(f'🤖 Bot {self.user} conectado a Discord!')
         await self.change_presence(activity=discord.Game(name="n!comandos | Ofertas Naerzone"))
-        self.loop.create_task(self.rotar_estado())  # <--- NUEVA LÍNEA
+        self.loop.create_task(self.rotar_estado())
         self.loop.create_task(self.programar_envios())
     
     async def on_guild_join(self, guild):
@@ -306,7 +306,7 @@ class NaerzoneBot(commands.Bot):
         logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
         await self.db.eliminar_servidor_bot(guild.id)
     
-    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA (CON REINTENTOS) =====
+    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA =====
     async def reprogramar_ahora(self, guild_id):
         logger.info(f"⚡ REPROGRAMACIÓN INMEDIATA para servidor {guild_id}")
         
@@ -410,9 +410,9 @@ class NaerzoneBot(commands.Bot):
                 logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
                 return
             
-            # ===== MODIFICADO: Se pasa guild_id en lugar de password =====
+            # ===== CORREGIDO: Se pasa la contraseña desencriptada =====
             session, success = login_web(credenciales['usuario'], credenciales['password'])
-            # =============================================================
+            # =========================================================
             
             if not success:
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone. Verifica tus credenciales.")
@@ -550,9 +550,9 @@ class ConfigCog(commands.Cog):
             await ctx.send("❌ Primero configura credenciales en la web")
             return
         
-        # ===== MODIFICADO: Se pasa ctx.guild.id en lugar de password =====
+        # ===== CORREGIDO: Se pasa la contraseña desencriptada =====
         session, success = login_web(credenciales['usuario'], credenciales['password'])
-        # =================================================================
+        # =========================================================
         
         if not success:
             await ctx.send("❌ Error de login con tus credenciales")
