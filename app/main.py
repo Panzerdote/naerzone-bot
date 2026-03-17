@@ -115,6 +115,7 @@ def extraer_icono_wowhead(wowhead_url):
         logger.error(f"Error en icono: {e}")
         return None
 
+# ========== FUNCIÓN LOGIN WEB ==========
 def login_web(usuario, password):
     try:
         session = requests.Session()
@@ -128,6 +129,7 @@ def login_web(usuario, password):
     except Exception as e:
         logger.error(f"Error en login: {e}")
         return None, False
+# =======================================
 
 def extraer_promocion(session):
     try:
@@ -235,9 +237,8 @@ class NaerzoneBot(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(ConfigCog(self))
     
-    # ===== NUEVA FUNCIÓN PARA ROTAR ESTADO =====
+    # ===== FUNCIÓN PARA ROTAR ESTADO =====
     async def rotar_estado(self):
-        """Cambia el estado del bot cada 5 minutos"""
         mensajes = [
             "🛒 Ofertas diarias",
             "⚙️ Configura en la web",
@@ -250,16 +251,16 @@ class NaerzoneBot(commands.Bot):
             try:
                 mensaje = next(ciclo)
                 await self.change_presence(activity=discord.Game(name=mensaje))
-                await asyncio.sleep(300)  # 5 minutos
+                await asyncio.sleep(300)
             except Exception as e:
                 logger.error(f"Error rotando estado: {e}")
                 await asyncio.sleep(60)
-    # ===========================================
+    # =====================================
     
     async def on_ready(self):
         logger.info(f'🤖 Bot {self.user} conectado a Discord!')
         await self.change_presence(activity=discord.Game(name="n!comandos | Ofertas Naerzone"))
-        self.loop.create_task(self.rotar_estado())  # <--- NUEVA LÍNEA
+        self.loop.create_task(self.rotar_estado())
         self.loop.create_task(self.programar_envios())
     
     async def on_guild_join(self, guild):
@@ -295,7 +296,7 @@ class NaerzoneBot(commands.Bot):
         logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
         await self.db.eliminar_servidor_bot(guild.id)
     
-    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA =====
+    # ===== FUNCIÓN DE REPROGRAMACIÓN =====
     async def reprogramar_ahora(self, guild_id):
         logger.info(f"⚡ REPROGRAMACIÓN INMEDIATA para servidor {guild_id}")
         
@@ -315,11 +316,23 @@ class NaerzoneBot(commands.Bot):
                 del self.tareas_programadas[task_id]
         
         # Obtener la nueva configuración
-        config = await self.db.obtener_config(guild_id)
-        credenciales = await self.db.obtener_credenciales(guild_id)
+        config = None
+        credenciales = None
+        reintentos = 3
+        
+        for intento in range(reintentos):
+            config = await self.db.obtener_config(guild_id)
+            credenciales = await self.db.obtener_credenciales(guild_id)
+            
+            if config and credenciales:
+                logger.info(f"   ✅ Configuración obtenida al intento {intento + 1}")
+                break
+            else:
+                logger.warning(f"⚠️ Intento {intento + 1} falló, esperando 1 segundo...")
+                await asyncio.sleep(1)
         
         if not config or not credenciales:
-            logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración")
+            logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración después de {reintentos} intentos")
             return False
         
         # Calcular próximo envío con NUEVA hora
@@ -365,7 +378,7 @@ class NaerzoneBot(commands.Bot):
         
         logger.info(f"✅ Servidor {guild_id} REPROGRAMADO para las {proximo.strftime('%H:%M')} (en {espera:.1f}s)")
         return True
-    # ===========================================================
+    # =====================================
     
     async def enviar_promocion_servidor(self, guild_id, canal_id, credenciales, config):
         try:
@@ -387,7 +400,10 @@ class NaerzoneBot(commands.Bot):
                 logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
                 return
             
+            # ===== CORREGIDO: Se pasa la contraseña desencriptada =====
             session, success = login_web(credenciales['usuario'], credenciales['password'])
+            # =========================================================
+            
             if not success:
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone. Verifica tus credenciales.")
                 return
@@ -523,7 +539,11 @@ class ConfigCog(commands.Cog):
         if not credenciales:
             await ctx.send("❌ Primero configura credenciales en la web")
             return
+        
+        # ===== CORREGIDO: Se pasa la contraseña desencriptada =====
         session, success = login_web(credenciales['usuario'], credenciales['password'])
+        # =========================================================
+        
         if not success:
             await ctx.send("❌ Error de login con tus credenciales")
             return
