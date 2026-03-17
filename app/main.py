@@ -411,7 +411,7 @@ class NaerzoneBot(commands.Bot):
                 return
             
             # ===== MODIFICADO: Se pasa guild_id en lugar de password =====
-            session, success = login_web(credenciales['usuario'], guild_id)
+            session, success = login_web(credenciales['usuario'], credenciales['password'])
             # =============================================================
             
             if not success:
@@ -551,7 +551,7 @@ class ConfigCog(commands.Cog):
             return
         
         # ===== MODIFICADO: Se pasa ctx.guild.id en lugar de password =====
-        session, success = login_web(credenciales['usuario'], ctx.guild.id)
+        session, success = login_web(credenciales['usuario'], credenciales['password'])
         # =================================================================
         
         if not success:
