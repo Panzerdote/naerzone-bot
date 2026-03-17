@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 db = Database()
 
 LOGIN_URL = "https://naerzone.com/start.php?login=ini"
+CANJES_URL = "https://naerzone.com/canjes/canjes-reino.php?r=t"  # <--- NUEVA LÍNEA
 HEADERS = {
     'User-Agent': 'Mozilla/5.0',
     'Referer': 'https://naerzone.com/login.php',
@@ -21,14 +22,62 @@ BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 chile_tz = pytz.timezone('America/Santiago')
 
 def verificar_credenciales_naerzone(usuario, password):
+    """
+    Verifica credenciales con DOBLE COMPROBACIÓN:
+    1. Login y respuesta "OK"
+    2. Acceso a página protegida (canjes)
+    """
     try:
         session = requests.Session()
-        session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
+        
+        # Headers completos para login (como en tu Colab)
+        headers_login = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://naerzone.com/login.php',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+        
+        # PASO 1: Obtener cookies iniciales
+        session.get('https://naerzone.com/login.php', headers=headers_login, timeout=10)
+        
+        # PASO 2: Enviar credenciales
         payload = {'nombre': usuario, 'password': password}
-        response = session.post(LOGIN_URL, data=payload, headers=HEADERS, timeout=10)
-        return response.text == "OK"
+        response = session.post(LOGIN_URL, data=payload, headers=headers_login, timeout=10)
+        
+        # PASO 3: Verificar respuesta del login
+        if response.text != "OK":
+            logger.warning(f"❌ Login falló para {usuario}: {response.text}")
+            return False
+        
+        logger.info(f"✅ Login OK para {usuario}, verificando acceso a canjes...")
+        
+        # PASO 4: VERIFICACIÓN ADICIONAL - acceder a página protegida
+        headers_canjes = {
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': 'https://naerzone.com/',
+        }
+        
+        canjes_response = session.get(CANJES_URL, headers=headers_canjes, timeout=15)
+        
+        # PASO 5: Verificar que realmente podemos acceder
+        if canjes_response.status_code == 200:
+            # Verificar que no hay mensaje de "login required" en la página
+            texto = canjes_response.text.lower()
+            if "inicia sesión" not in texto and "login" not in texto:
+                logger.info(f"✅ Verificación COMPLETA exitosa para {usuario}")
+                return True
+            else:
+                logger.warning(f"⚠️ Página de canjes pide login para {usuario}")
+        else:
+            logger.warning(f"⚠️ No se pudo acceder a canjes (código {canjes_response.status_code}) para {usuario}")
+        
+        return False
+        
+    except requests.exceptions.Timeout:
+        logger.error(f"⏰ Timeout verificando credenciales para {usuario}")
+        return False
     except Exception as e:
-        logger.error(f"Error verificando credenciales: {e}")
+        logger.error(f"❌ Error verificando credenciales: {e}")
         return False
 
 async def obtener_canales_discord(guild_id):
@@ -70,7 +119,15 @@ def init_api_routes(app):
         password = data.get('password')
         if not usuario or not password:
             return jsonify({'valido': False, 'error': 'Faltan datos'})
+        
+        logger.info(f"🔐 Verificando credenciales para usuario: {usuario}")
         valido = verificar_credenciales_naerzone(usuario, password)
+        
+        if valido:
+            logger.info(f"✅ Credenciales VÁLIDAS para {usuario}")
+        else:
+            logger.warning(f"❌ Credenciales INVÁLIDAS para {usuario}")
+            
         return jsonify({'valido': valido})
     
     @app.route('/api/guardar-credenciales', methods=['POST'])
@@ -84,8 +141,15 @@ def init_api_routes(app):
         if not guild_id or not usuario:
             return jsonify({'exito': False, 'error': 'Faltan datos'})
         
-        if password and not verificar_credenciales_naerzone(usuario, password):
-            return jsonify({'exito': False, 'error': 'Credenciales inválidas'})
+        # Verificar credenciales solo si se proporcionó nueva contraseña
+        if password:
+            logger.info(f"🔐 Verificando credenciales NUEVAS para {usuario} en guild {guild_id}")
+            if not verificar_credenciales_naerzone(usuario, password):
+                logger.warning(f"❌ Credenciales inválidas para {usuario} en guild {guild_id}")
+                return jsonify({'exito': False, 'error': 'Credenciales inválidas'})
+            logger.info(f"✅ Credenciales válidas para {usuario}, guardando...")
+        else:
+            logger.info(f"ℹ️ Guardando credenciales SIN cambiar contraseña para {usuario}")
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -93,6 +157,12 @@ def init_api_routes(app):
             db.guardar_credenciales(guild_id, guild_name, usuario, password)
         )
         loop.close()
+        
+        if resultado:
+            logger.info(f"✅ Credenciales guardadas exitosamente para guild {guild_id}")
+        else:
+            logger.error(f"❌ Error al guardar credenciales para guild {guild_id}")
+            
         return jsonify({'exito': resultado})
     
     @app.route('/api/guardar-config', methods=['POST'])
