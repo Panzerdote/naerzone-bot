@@ -115,8 +115,29 @@ def extraer_icono_wowhead(wowhead_url):
         logger.error(f"Error en icono: {e}")
         return None
 
-def login_web(usuario, password):
+# ========== FUNCIÓN LOGIN WEB MODIFICADA (USA DESENCRIPTADO) ==========
+def login_web(usuario, guild_id):
+    """
+    Inicia sesión en Naerzone.
+    Primero obtiene la contraseña desencriptada desde Supabase usando el guild_id.
+    """
     try:
+        # Obtener la contraseña desencriptada
+        from supabase import create_client
+        supabase_url = os.environ.get('SUPABASE_URL')
+        supabase_key = os.environ.get('SUPABASE_KEY')
+        supabase_client = create_client(supabase_url, supabase_key)
+        
+        response = supabase_client.rpc('decrypt_credencial_password', {'p_guild_id': str(guild_id)}).execute()
+        
+        if not response.data:
+            logger.error(f"❌ No se pudo desencriptar la contraseña para guild {guild_id}")
+            return None, False
+        
+        password = response.data
+        logger.info(f"✅ Contraseña desencriptada correctamente para guild {guild_id}")
+        
+        # Login normal
         session = requests.Session()
         session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
         payload = {'nombre': usuario, 'password': password}
@@ -126,8 +147,9 @@ def login_web(usuario, password):
         else:
             return None, False
     except Exception as e:
-        logger.error(f"Error en login: {e}")
+        logger.error(f"Error en login_web: {e}")
         return None, False
+# =====================================================================
 
 def extraer_promocion(session):
     try:
@@ -314,7 +336,7 @@ class NaerzoneBot(commands.Bot):
             if task_id in self.tareas_programadas:
                 del self.tareas_programadas[task_id]
         
-        # ===== NUEVO: Reintentar obtener configuración =====
+        # Obtener la nueva configuración
         config = None
         credenciales = None
         reintentos = 3
@@ -329,7 +351,6 @@ class NaerzoneBot(commands.Bot):
             else:
                 logger.warning(f"⚠️ Intento {intento + 1} falló, esperando 1 segundo...")
                 await asyncio.sleep(1)
-        # ==================================================
         
         if not config or not credenciales:
             logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración después de {reintentos} intentos")
@@ -400,7 +421,10 @@ class NaerzoneBot(commands.Bot):
                 logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
                 return
             
-            session, success = login_web(credenciales['usuario'], credenciales['password'])
+            # ===== MODIFICADO: Se pasa guild_id en lugar de password =====
+            session, success = login_web(credenciales['usuario'], guild_id)
+            # =============================================================
+            
             if not success:
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone. Verifica tus credenciales.")
                 return
@@ -536,7 +560,11 @@ class ConfigCog(commands.Cog):
         if not credenciales:
             await ctx.send("❌ Primero configura credenciales en la web")
             return
-        session, success = login_web(credenciales['usuario'], credenciales['password'])
+        
+        # ===== MODIFICADO: Se pasa ctx.guild.id en lugar de password =====
+        session, success = login_web(credenciales['usuario'], ctx.guild.id)
+        # =================================================================
+        
         if not success:
             await ctx.send("❌ Error de login con tus credenciales")
             return
