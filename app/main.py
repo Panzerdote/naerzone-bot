@@ -116,39 +116,24 @@ def extraer_icono_wowhead(wowhead_url):
         return None
 
 # ========== FUNCIÓN LOGIN WEB MODIFICADA (USA DESENCRIPTADO) ==========
-def login_web(usuario, guild_id):
+def login_web(usuario, password):
     """
     Inicia sesión en Naerzone.
-    Primero obtiene la contraseña desencriptada desde Supabase usando el guild_id.
+    Recibe usuario y contraseña en texto plano (ya desencriptados).
     """
     try:
-        # Obtener la contraseña desencriptada
-        from supabase import create_client
-        supabase_url = os.environ.get('SUPABASE_URL')
-        supabase_key = os.environ.get('SUPABASE_KEY')
-        supabase_client = create_client(supabase_url, supabase_key)
+        logger.info(f"🔐 Intentando login para usuario {usuario}")
         
-        # Llamar a la función SQL
-        response = supabase_client.rpc('decrypt_credencial_password', {'p_guild_id': str(guild_id)}).execute()
-        
-        # LOG PARA DEPURACIÓN (lo puedes borrar después)
-        logger.info(f"🔍 Respuesta de desencriptado: {response}")
-        
-        if not response.data:
-            logger.error(f"❌ No se pudo desencriptar la contraseña para guild {guild_id}")
-            return None, False
-        
-        password = response.data
-        logger.info(f"✅ Contraseña desencriptada correctamente para guild {guild_id}")
-        
-        # Login normal
         session = requests.Session()
         session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
         payload = {'nombre': usuario, 'password': password}
         response = session.post(LOGIN_URL, data=payload, headers=HEADERS, timeout=10)
+        
         if response.text == "OK":
+            logger.info(f"✅ Login exitoso para {usuario}")
             return session, True
         else:
+            logger.error(f"❌ Login fallido para {usuario}: {response.text}")
             return None, False
     except Exception as e:
         logger.error(f"Error en login_web: {e}")
