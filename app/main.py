@@ -115,30 +115,19 @@ def extraer_icono_wowhead(wowhead_url):
         logger.error(f"Error en icono: {e}")
         return None
 
-# ========== FUNCIÓN LOGIN WEB SIMPLE ==========
 def login_web(usuario, password):
-    """
-    Inicia sesión en Naerzone.
-    Recibe usuario y contraseña en texto plano (ya desencriptados).
-    """
     try:
-        logger.info(f"🔐 Intentando login para usuario {usuario}")
-        
         session = requests.Session()
         session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
         payload = {'nombre': usuario, 'password': password}
         response = session.post(LOGIN_URL, data=payload, headers=HEADERS, timeout=10)
-        
         if response.text == "OK":
-            logger.info(f"✅ Login exitoso para {usuario}")
             return session, True
         else:
-            logger.error(f"❌ Login fallido para {usuario}: {response.text}")
             return None, False
     except Exception as e:
-        logger.error(f"Error en login_web: {e}")
+        logger.error(f"Error en login: {e}")
         return None, False
-# ==============================================
 
 def extraer_promocion(session):
     try:
@@ -270,7 +259,7 @@ class NaerzoneBot(commands.Bot):
     async def on_ready(self):
         logger.info(f'🤖 Bot {self.user} conectado a Discord!')
         await self.change_presence(activity=discord.Game(name="n!comandos | Ofertas Naerzone"))
-        self.loop.create_task(self.rotar_estado())
+        self.loop.create_task(self.rotar_estado())  # <--- NUEVA LÍNEA
         self.loop.create_task(self.programar_envios())
     
     async def on_guild_join(self, guild):
@@ -326,23 +315,11 @@ class NaerzoneBot(commands.Bot):
                 del self.tareas_programadas[task_id]
         
         # Obtener la nueva configuración
-        config = None
-        credenciales = None
-        reintentos = 3
-        
-        for intento in range(reintentos):
-            config = await self.db.obtener_config(guild_id)
-            credenciales = await self.db.obtener_credenciales(guild_id)
-            
-            if config and credenciales:
-                logger.info(f"   ✅ Configuración obtenida al intento {intento + 1}")
-                break
-            else:
-                logger.warning(f"⚠️ Intento {intento + 1} falló, esperando 1 segundo...")
-                await asyncio.sleep(1)
+        config = await self.db.obtener_config(guild_id)
+        credenciales = await self.db.obtener_credenciales(guild_id)
         
         if not config or not credenciales:
-            logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración después de {reintentos} intentos")
+            logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración")
             return False
         
         # Calcular próximo envío con NUEVA hora
@@ -410,10 +387,7 @@ class NaerzoneBot(commands.Bot):
                 logger.info(f"⏭️ {guild.name} ya recibió la promo hoy")
                 return
             
-            # ===== CORREGIDO: Se pasa la contraseña desencriptada =====
             session, success = login_web(credenciales['usuario'], credenciales['password'])
-            # =========================================================
-            
             if not success:
                 await canal.send("⚠️ **Error:** No se pudo iniciar sesión en Naerzone. Verifica tus credenciales.")
                 return
@@ -549,11 +523,7 @@ class ConfigCog(commands.Cog):
         if not credenciales:
             await ctx.send("❌ Primero configura credenciales en la web")
             return
-        
-        # ===== CORREGIDO: Se pasa la contraseña desencriptada =====
         session, success = login_web(credenciales['usuario'], credenciales['password'])
-        # =========================================================
-        
         if not success:
             await ctx.send("❌ Error de login con tus credenciales")
             return
