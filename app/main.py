@@ -128,7 +128,11 @@ def login_web(usuario, guild_id):
         supabase_key = os.environ.get('SUPABASE_KEY')
         supabase_client = create_client(supabase_url, supabase_key)
         
+        # Llamar a la función SQL
         response = supabase_client.rpc('decrypt_credencial_password', {'p_guild_id': str(guild_id)}).execute()
+        
+        # LOG PARA DEPURACIÓN (lo puedes borrar después)
+        logger.info(f"🔍 Respuesta de desencriptado: {response}")
         
         if not response.data:
             logger.error(f"❌ No se pudo desencriptar la contraseña para guild {guild_id}")
