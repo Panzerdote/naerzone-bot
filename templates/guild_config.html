@@ -171,6 +171,21 @@
             margin-top: 10px;
             border: 1px solid #40444b;
         }
+        /* Estilo para el ID pequeño */
+        .canal-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .canal-nombre {
+            color: white;
+            font-weight: 500;
+        }
+        .canal-id-pequeno {
+            color: #b9bbbe;
+            font-size: 0.7rem;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -258,7 +273,7 @@
         </div>
 
         {% if config %}
-        <!-- SECCIÓN 3: PRÓXIMO ENVÍO (MEJORADA) -->
+        <!-- SECCIÓN 3: PRÓXIMO ENVÍO (MEJORADA CON NOMBRE E ID) -->
         <div class="config-section">
             <h2 class="section-title">📅 Próximo envío</h2>
             
@@ -270,16 +285,21 @@
             
             <!-- Tarjeta de información estilo tabla -->
             <div style="background: rgba(0,0,0,0.2); border-radius: 10px; padding: 20px; margin-top: 10px;">
+                <!-- CANAL: Nombre grande + ID pequeño -->
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #40444b;">
                     <span style="color: #b9bbbe;">📢 Canal:</span>
-                    <span style="color: white; font-weight: 500;">
-                        {% if config.canal_nombre %}
-                            #{{ config.canal_nombre }}
-                        {% else %}
-                            ID: {{ config.canal_id }}
-                        {% endif %}
-                    </span>
+                    <div class="canal-info">
+                        <span class="canal-nombre">
+                            {% if config.canal_nombre %}
+                                #{{ config.canal_nombre }}
+                            {% else %}
+                                Canal sin nombre
+                            {% endif %}
+                        </span>
+                        <span class="canal-id-pequeno">ID: {{ config.canal_id }}</span>
+                    </div>
                 </div>
+                
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #40444b;">
                     <span style="color: #b9bbbe;">📅 Fecha:</span>
                     <span style="color: white; font-weight: 500;">{{ proximo.strftime('%d/%m/%Y') }}</span>
