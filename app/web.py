@@ -1,4 +1,3 @@
-# app/web.py
 from flask import request, jsonify
 import logging
 from database import Database
@@ -21,9 +20,7 @@ HEADERS = {
 BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 chile_tz = pytz.timezone('America/Santiago')
 
-# ========== FUNCIÓN SIMPLE DE VERIFICACIÓN ==========
 def verificar_credenciales_naerzone(usuario, password):
-    """Verifica credenciales con Naerzone - VERSIÓN SIMPLE"""
     try:
         session = requests.Session()
         session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
@@ -33,7 +30,6 @@ def verificar_credenciales_naerzone(usuario, password):
     except Exception as e:
         logger.error(f"Error verificando credenciales: {e}")
         return False
-# ====================================================
 
 async def obtener_canales_discord(guild_id):
     try:
