@@ -295,7 +295,7 @@ class NaerzoneBot(commands.Bot):
         logger.info(f"👋 Bot eliminado del servidor: {guild.name} ({guild.id})")
         await self.db.eliminar_servidor_bot(guild.id)
     
-    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA =====
+    # ===== FUNCIÓN DE REPROGRAMACIÓN INMEDIATA (CON REINTENTOS) =====
     async def reprogramar_ahora(self, guild_id):
         logger.info(f"⚡ REPROGRAMACIÓN INMEDIATA para servidor {guild_id}")
         
@@ -314,12 +314,25 @@ class NaerzoneBot(commands.Bot):
             if task_id in self.tareas_programadas:
                 del self.tareas_programadas[task_id]
         
-        # Obtener la nueva configuración
-        config = await self.db.obtener_config(guild_id)
-        credenciales = await self.db.obtener_credenciales(guild_id)
+        # ===== NUEVO: Reintentar obtener configuración =====
+        config = None
+        credenciales = None
+        reintentos = 3
+        
+        for intento in range(reintentos):
+            config = await self.db.obtener_config(guild_id)
+            credenciales = await self.db.obtener_credenciales(guild_id)
+            
+            if config and credenciales:
+                logger.info(f"   ✅ Configuración obtenida al intento {intento + 1}")
+                break
+            else:
+                logger.warning(f"⚠️ Intento {intento + 1} falló, esperando 1 segundo...")
+                await asyncio.sleep(1)
+        # ==================================================
         
         if not config or not credenciales:
-            logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración")
+            logger.warning(f"⚠️ No se puede reprogramar {guild_id}: falta configuración después de {reintentos} intentos")
             return False
         
         # Calcular próximo envío con NUEVA hora
