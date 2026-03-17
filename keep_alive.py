@@ -4,6 +4,7 @@ import logging
 import os
 import time
 import secrets
+import json
 from requests_oauthlib import OAuth2Session
 from datetime import datetime
 import pytz
@@ -53,12 +54,12 @@ app = Flask(__name__,
             static_folder='static')
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
-# ========== FILTRO ESCAPEJS ==========
-import json
+# ========== NUEVO FILTRO ESCAPEJS (SOLO ESTO SE AÑADE) ==========
 @app.template_filter('escapejs')
 def escapejs_filter(s):
-    return json.dumps(s)[1:-1]
-# =====================================
+    """Escapa un string para usarlo en JavaScript"""
+    return json.dumps(s)[1:-1]  # Elimina las comillas externas
+# ===============================================================
 
 # Referencia al bot
 bot = None
@@ -122,7 +123,6 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ==================== DASHBOARD CORREGIDO CON LOGS ====================
 @app.route('/dashboard')
 def dashboard():
     if 'oauth_token' not in session:
@@ -133,29 +133,16 @@ def dashboard():
         guilds_response = discord.get(DISCORD_GUILDS_URL)
         user_guilds = guilds_response.json()
         
-        logger.info(f"📋 Usuario tiene {len(user_guilds)} servidores en Discord")
-        
-        # Obtener servidores donde el bot está presente
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         db = Database()
         bot_guilds_ids = loop.run_until_complete(db.obtener_servidores_bot())
         loop.close()
         
-        logger.info(f"🤖 Bot está en {len(bot_guilds_ids)} servidores según Supabase")
-        logger.info(f"   IDs del bot: {bot_guilds_ids}")
-        
         admin_guilds = []
         for g in user_guilds:
             is_admin = (int(g['permissions']) & 0x8) == 0x8
             if is_admin:
-                # Comparar asegurando mismo tipo (string)
-                bot_esta = str(g['id']) in [str(id) for id in bot_guilds_ids]
-                
-                logger.info(f"   Servidor: {g['name']}")
-                logger.info(f"      ID: {g['id']} (tipo: {type(g['id']).__name__})")
-                logger.info(f"      Bot presente según comparación: {bot_esta}")
-                
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 config = loop.run_until_complete(db.obtener_config(g['id']))
@@ -165,12 +152,10 @@ def dashboard():
                     'id': g['id'],
                     'name': g['name'],
                     'icon': g.get('icon'),
-                    'bot_esta': bot_esta,
+                    'bot_esta': str(g['id']) in bot_guilds_ids,
                     'configurado': config is not None
                 }
                 admin_guilds.append(guild_info)
-        
-        logger.info(f"👑 Servidores admin para mostrar: {len(admin_guilds)}")
         
         return render_template('dashboard.html', 
                              user=session['user'],
@@ -178,7 +163,6 @@ def dashboard():
     except Exception as e:
         logger.error(f"Error en dashboard: {e}")
         return jsonify({"error": str(e)}), 500
-# ======================================================================
 
 @app.route('/guild/<guild_id>')
 def guild_config(guild_id):
@@ -209,13 +193,15 @@ def home():
         logger.error(f"Error en home: {e}")
         return jsonify({"error": str(e)}), 500
 
-# ==================== API ELIMINAR SERVIDOR ====================
+# ==================== NUEVA RUTA API PARA ELIMINAR SERVIDOR ====================
 @app.route('/api/eliminar-servidor/<guild_id>', methods=['POST'])
 def api_eliminar_servidor(guild_id):
+    """API para que un administrador elimine el bot y sus datos de un servidor"""
     if 'oauth_token' not in session:
         return jsonify({"error": "No autenticado"}), 401
     
     try:
+        # Verificar que el usuario es administrador del servidor
         token = session['oauth_token']
         discord = OAuth2Session(DISCORD_CLIENT_ID, token=token)
         guilds_response = discord.get(DISCORD_GUILDS_URL)
@@ -230,6 +216,7 @@ def api_eliminar_servidor(guild_id):
         if not es_admin:
             return jsonify({"error": "No eres administrador de este servidor"}), 403
         
+        # 1. Eliminar datos de Supabase
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         db = Database()
@@ -239,21 +226,27 @@ def api_eliminar_servidor(guild_id):
         if not resultado:
             return jsonify({"error": "Error eliminando datos"}), 500
         
+        # 2. Hacer que el bot abandone el servidor (CORREGIDO)
         if bot:
             guild = bot.get_guild(int(guild_id))
             if guild:
+                # Usar el loop del bot en lugar de crear uno nuevo
                 asyncio.run_coroutine_threadsafe(
                     guild.leave(),
                     bot.loop
                 )
                 logger.info(f"👋 Bot expulsado manualmente del servidor {guild_id}")
+            else:
+                logger.warning(f"⚠️ No se encontró el guild {guild_id} en el bot")
+        else:
+            logger.warning("⚠️ Bot no disponible para expulsar")
         
         return jsonify({"exito": True})
         
     except Exception as e:
         logger.error(f"❌ Error en api_eliminar_servidor: {e}")
         return jsonify({"error": str(e)}), 500
-# ================================================================
+# =================================================================================
 
 def run():
     port = int(os.environ.get("PORT", 10000))
