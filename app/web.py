@@ -21,45 +21,45 @@ HEADERS = {
 BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 chile_tz = pytz.timezone('America/Santiago')
 
-# ========== FUNCIÓN CORREGIDA CON LOGS ==========
 def verificar_credenciales_naerzone(usuario, password):
-    """Verifica credenciales con Naerzone"""
+    """Verifica credenciales con Naerzone - VERSIÓN CON LOGS DETALLADOS"""
     try:
-        logger.info(f"🔐 Verificando credenciales para usuario: {usuario}")
+        logger.info(f"🔐 VERIFICANDO CREDENCIALES - Usuario: '{usuario}'")
+        logger.info(f"   Password length: {len(password)} caracteres")
         
         session = requests.Session()
         
-        # Paso 1: Visitar la página de login
-        logger.info(f"📡 Visitando página de login...")
+        # Paso 1: Visitar página de login (para obtener cookies)
+        logger.info("📡 Paso 1: Visitando https://naerzone.com/login.php")
         login_page = session.get('https://naerzone.com/login.php', headers=HEADERS, timeout=10)
-        logger.info(f"   Status code: {login_page.status_code}")
+        logger.info(f"   Status: {login_page.status_code}")
+        logger.info(f"   Cookies: {session.cookies.get_dict()}")
         
         # Paso 2: Enviar credenciales
         payload = {'nombre': usuario, 'password': password}
-        logger.info(f"📤 Enviando payload a {LOGIN_URL}")
+        logger.info(f"📡 Paso 2: Enviando POST a {LOGIN_URL}")
+        logger.info(f"   Payload: {payload}")
         
         response = session.post(LOGIN_URL, data=payload, headers=HEADERS, timeout=10)
-        logger.info(f"   Status code: {response.status_code}")
+        logger.info(f"   Status: {response.status_code}")
         logger.info(f"   Respuesta: '{response.text}'")
         
         if response.text == "OK":
-            logger.info(f"✅ Credenciales válidas para {usuario}")
+            logger.info("✅ VERIFICACIÓN EXITOSA")
             return True
         else:
-            logger.warning(f"❌ Credenciales inválidas para {usuario}")
-            logger.warning(f"   Respuesta completa: {response.text[:200]}")
+            logger.error(f"❌ VERIFICACIÓN FALLÓ - Respuesta: '{response.text}'")
             return False
             
     except requests.Timeout:
-        logger.error(f"⏰ Timeout al verificar credenciales para {usuario}")
+        logger.error("⏰ TIMEOUT - El servidor de Naerzone no respondió")
         return False
-    except requests.ConnectionError:
-        logger.error(f"🔌 Error de conexión al verificar credenciales para {usuario}")
+    except requests.ConnectionError as e:
+        logger.error(f"🔌 ERROR DE CONEXIÓN: {e}")
         return False
     except Exception as e:
-        logger.error(f"💥 Error inesperado verificando credenciales: {e}")
+        logger.error(f"💥 ERROR INESPERADO: {e}")
         return False
-# =================================================
 
 async def obtener_canales_discord(guild_id):
     try:
@@ -98,9 +98,14 @@ def init_api_routes(app):
         data = request.json
         usuario = data.get('usuario')
         password = data.get('password')
+        logger.info(f"📩 API VERIFICAR - Recibida petición para usuario: {usuario}")
+        
         if not usuario or not password:
+            logger.error("   Faltan datos")
             return jsonify({'valido': False, 'error': 'Faltan datos'})
+        
         valido = verificar_credenciales_naerzone(usuario, password)
+        logger.info(f"   Resultado: {valido}")
         return jsonify({'valido': valido})
     
     @app.route('/api/guardar-credenciales', methods=['POST'])
@@ -111,18 +116,26 @@ def init_api_routes(app):
         usuario = data.get('usuario')
         password = data.get('password')
         
+        logger.info(f"📩 API GUARDAR CREDENCIALES - guild: {guild_id}, usuario: {usuario}")
+        
         if not guild_id or not usuario:
             return jsonify({'exito': False, 'error': 'Faltan datos'})
         
+        # Verificar credenciales con Naerzone
+        logger.info("   Verificando credenciales con Naerzone...")
         if password and not verificar_credenciales_naerzone(usuario, password):
+            logger.error("   ❌ Credenciales inválidas según Naerzone")
             return jsonify({'exito': False, 'error': 'Credenciales inválidas'})
         
+        logger.info("   ✅ Credenciales válidas, guardando en Supabase...")
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         resultado = loop.run_until_complete(
             db.guardar_credenciales(guild_id, guild_name, usuario, password)
         )
         loop.close()
+        
+        logger.info(f"   Resultado guardado: {resultado}")
         return jsonify({'exito': resultado})
     
     @app.route('/api/guardar-config', methods=['POST'])
