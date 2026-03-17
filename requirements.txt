@@ -11,4 +11,3 @@ itsdangerous==2.1.2
 waitress==3.0.0
 httpx==0.24.1
 httpcore==0.17.3
-cryptography>=41.0.0
